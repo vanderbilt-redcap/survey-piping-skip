@@ -7,6 +7,10 @@ use ExternalModules\ExternalModules;
 
 class SurveyPipingSkip extends AbstractExternalModule
 {
+    function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
+
+    }
+
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
         $sourceProjects = $this->getProjectSetting('source_project');
         $sourcePartIDs = $this->getProjectSetting('source_part_id');
@@ -14,6 +18,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         $pipeAll = $this->getProjectSetting('pipe_all_data');
         $sourceForms = $this->getProjectSetting('source_form');
         $destForms = $this->getProjectSetting('dest_form');
+        $calcStrings = $this->getProjectSetting('pipe_data_check');
 
         $destIDField = "";
         $destIDValue = "";
@@ -38,6 +43,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         }
 
         $currentData = \REDCap::getData($project_id,'array',array($record),array($destIDField,$destCompleteField));
+
         foreach ($currentData[$record] as $eventID => $eventData) {
             if ($eventID == "repeat_instances") {
                 foreach ($eventData as $subEventID => $subEventData) {
@@ -65,17 +71,18 @@ class SurveyPipingSkip extends AbstractExternalModule
             }
         }
 
-        if (!empty($sourceProjects) && $destCompleteValue != "2") {
+        if (!empty($sourceProjects) && $survey_hash != "") {
             $currentProject = new \Project($project_id);
             $currentFormFields = $this->getFieldsOnForm($currentProject->metadata,$instrument);
 
             $sourceProjectID = $sourceProjects[$currentIndex];
+
             if ($sourceProjectID != "" && is_numeric($sourceProjectID)) {
                 $sourceProject = new \Project($sourceProjectID);
                 $sourceForm = $sourceForms[$currentIndex][$subIndex];
                 $sourceCompleteField = $sourceForms[$currentIndex][$formIndex]."_complete";
                 $sourceFormFields = $this->getFieldsOnForm($sourceProject->metadata,$sourceForm);
-                $sourceData = \REDCap::getData($sourceProjectID, 'array', array(), array($sourceFormFields), array(), array(), false, false, false, "[".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'");
+                $sourceData = \REDCap::getData($sourceProjectID, 'array', array(), $sourceFormFields, array(), array(), false, false, false, "[".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'");
 
                 if (!empty($sourceData)) {
                     $transferData = array();
@@ -84,7 +91,9 @@ class SurveyPipingSkip extends AbstractExternalModule
                             if ($eventID == "repeat_instances") {
                                 foreach ($eventData as $subEventID => $subEventData) {
                                     foreach ($subEventData as $subInstrument => $subInstrumentData) {
+                                        if ($calcStrings[$currentIndex] != "" && $this->getCalculatedData($calcStrings[$currentIndex],$sourceData,$subEventID,$sourceProjectID,$sourceForm,$repeat_instance) == "1") continue;
                                         foreach ($subInstrumentData[$repeat_instance] as $fieldName => $subFieldData) {
+                                            if (!in_array($fieldName,$sourceFormFields)) continue;
                                             if ($fieldName == $sourceCompleteField) {
                                                 //$transferData[$record][$event_id]['repeat_instances'][$event_id][$instrument][$repeat_instance][$destCompleteField] = $subFieldData;
                                             }
@@ -95,7 +104,10 @@ class SurveyPipingSkip extends AbstractExternalModule
                                     }
                                 }
                             } else {
+                                if ($calcStrings[$currentIndex] != "" && $this->getCalculatedData($calcStrings[$currentIndex],$sourceData,$eventID,$sourceProjectID,$sourceForm,$repeat_instance) != "1") continue;
+
                                 foreach ($eventData as $fieldName => $fieldData) {
+                                    if (!in_array($fieldName,$sourceFormFields)) continue;
                                     if ($fieldName == $sourceCompleteField) {
                                         //$transferData[$record][$event_id][$destCompleteField] = $fieldData;
                                     }
@@ -107,7 +119,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                         }
                     }
 
-                    if (!empty($transferData) && $survey_hash != "") {
+                    if (!empty($transferData)) {
                         if ($currentProject->isRepeatingFormOrEvent($event_id,$instrument)) {
                             /*$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance]['redcap_repeat_instance'] = $repeat_instance;
                             $transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance]['redcap_repeat_instrument'] = $destForms[$currentIndex][$subIndex];*/
@@ -138,6 +150,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         $pipeAll = $this->getProjectSetting('pipe_all_data');
         $sourceForms = $this->getProjectSetting('source_form');
         $destForms = $this->getProjectSetting('dest_form');
+        $calcStrings = $this->getProjectSetting('pipe_data_check');
 
         $destIDField = "";
         $destIDValue = "";
@@ -199,7 +212,11 @@ class SurveyPipingSkip extends AbstractExternalModule
                 $sourceForm = $sourceForms[$currentIndex][$subIndex];
                 $sourceCompleteField = $sourceForm."_complete";
                 $sourceFormFields = $this->getFieldsOnForm($sourceProject->metadata,$sourceForm);
-                $sourceData = \REDCap::getData($sourceProjectID, 'array', array(), array($sourceFormFields), array(), array(), false, false, false, "[".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'");
+                if (!in_array($sourcePartIDs[$currentIndex],$sourceFormFields)) {
+                    $sourceFormFields = array($sourcePartIDs[$currentIndex]);
+                }
+
+                $sourceData = \REDCap::getData($sourceProjectID, 'array', array(), array(), array(), array(), false, false, false, "[".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'");
 
                 if (!empty($sourceData)) {
                     $sourceCompleteValue = "";
@@ -208,6 +225,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                             if ($eventID == "repeat_instances") {
                                 foreach ($eventData as $subEventID => $subEventData) {
                                     foreach ($subEventData as $subInstrument => $subInstrumentData) {
+                                        if ($calcStrings[$currentIndex] != "" && $this->getCalculatedData($calcStrings[$currentIndex],$sourceData,$subEventID,$sourceProjectID,$sourceForm,$repeat_instance) != "1") continue;
                                         foreach ($subInstrumentData[$repeat_instance] as $fieldName => $subFieldData) {
                                             if ($fieldName == $sourceCompleteField) {
                                                 $sourceCompleteValue = $subFieldData;
@@ -217,6 +235,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                     }
                                 }
                             } else {
+                                if ($calcStrings[$currentIndex] != "" && $this->getCalculatedData($calcStrings[$currentIndex],$sourceData,$eventID,$sourceProjectID,$sourceForm,$repeat_instance) != "1") continue;
                                 foreach ($eventData as $fieldName => $fieldData) {
                                     if ($fieldName == $sourceCompleteField) {
                                         $sourceCompleteValue = $fieldData;
@@ -226,6 +245,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                             }
                         }
                     }
+
                     /*if (!empty($transferData) && $currentProject->isRepeatingFormOrEvent($event_id,$instrument)) {
                         $transferData[$record][$event_id]['repeat_instances'][$event_id][$instrument][$repeat_instance]['redcap_repeat_instance'] = $repeat_instance;
                         $transferData[$record][$event_id]['repeat_instances'][$event_id][$instrument][$repeat_instance]['redcap_repeat_instrument'] = $destForms[$currentIndex][$subIndex];
@@ -247,6 +267,63 @@ class SurveyPipingSkip extends AbstractExternalModule
                 }
             }
         }
+    }
+
+    function getCalculatedData($calcString,$recordData,$event_id,$project_id,$repeat_instrument,$repeat_instance=null) {
+        $formatCalc = \Calculate::formatCalcToPHP($calcString);
+        //echo "The string!!<br/>$formatCalc<br/>";
+        $parser = new \LogicParser();
+        try {
+            list($funcName, $argMap) = $parser->parse($formatCalc, $event_id, true, false);
+            $thisInstanceArgMap = $argMap;
+            $Proj = new \Project($project_id);
+            foreach ($thisInstanceArgMap as &$theseArgs) {
+                $theseArgs[0] = $event_id;
+            }
+            //echo "Form: ".$Proj->metadata['age']['form_name']."<br/>";
+
+            if ($repeat_instance != "") {
+                foreach ($thisInstanceArgMap as &$theseArgs) {
+                    // If there is no instance number for this arm map field, then proceed
+                    if ($theseArgs[3] == "") {
+                        $thisInstanceArgEventId = ($theseArgs[0] == "") ? $event_id : $theseArgs[0];
+                        $thisInstanceArgEventId = is_numeric($thisInstanceArgEventId) ? $thisInstanceArgEventId : $Proj->getEventIdUsingUniqueEventName($thisInstanceArgEventId);
+                        $thisInstanceArgField = $theseArgs[1];
+                        $thisInstanceArgFieldForm = $Proj->metadata[$thisInstanceArgField]['form_name'];
+                        // If this event or form/event is repeating event/instrument, the add the current instance number to arg map
+                        if ( // Is a valid repeating instrument?
+                            ($repeat_instrument != '' && $thisInstanceArgFieldForm == $repeat_instrument && $Proj->isRepeatingForm($thisInstanceArgEventId, $thisInstanceArgFieldForm))
+                            // Is a valid repeating event?
+                            || ($repeat_instrument == '' && $Proj->isRepeatingEvent($thisInstanceArgEventId) && in_array($thisInstanceArgFieldForm, $Proj->eventsForms[$thisInstanceArgEventId]))) {
+                            $theseArgs[3] = $repeat_instance;
+                        }
+                    }
+                }
+                unset($theseArgs);
+            }
+            /*echo "<pre>";
+            print_r($thisInstanceArgMap);
+            echo "</pre>";*/
+            foreach ($recordData as $record => &$this_record_data1) {
+                $calculatedCalcVal = \LogicTester::evaluateCondition(null, $this_record_data1, $funcName, $thisInstanceArgMap, null);
+                //echo "The calc value: $calculatedCalcVal<br/>";
+                foreach (parseEnum(strip_tags(label_decode($Proj->metadata[$thisInstanceArgMap[count($thisInstanceArgMap) - 1][1]]['element_enum']))) as $this_code => $this_choice) {
+                    if ($calculatedCalcVal === $this_code) {
+                        $calculatedCalcVal = $this_choice;
+                        break;
+                    }
+                }
+            }
+        }
+        catch (\Exception $e) {
+            if (strpos($e->getMessage(),"Parse error in input:") === 0 || strpos($e->getMessage(),"Unable to find next token in") === 0) {
+                return $calcString;
+            }
+            else {
+                return "";
+            }
+        }
+        return $calculatedCalcVal;
     }
 
     function getFieldsOnForm($metadata, $formname) {
