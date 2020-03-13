@@ -49,11 +49,6 @@
           "required": true
         },
         {
-          "key": "pipe_data_check",
-          "name": "Data Flag in Source to Pipe Data",
-          "type": "text"
-        },
-        {
           "key": "pipe_all_data",
           "name": "Pipe All Data from Source Project",
           "type":"radio",
@@ -86,6 +81,26 @@
               "name": "Form Name on Current Project",
               "type": "form-list",
               "required": true
+            },
+            {
+              "key": "auto_submit",
+              "name": "Auto Submit Form on Piping",
+              "type":"radio",
+              "choices": [
+                {
+                  "value": "no",
+                  "name": "No"
+                },
+                {
+                  "value": "yes",
+                  "name": "Yes"
+                }
+              ]
+            },
+            {
+              "key": "pipe_data_check",
+              "name": "Data Flag in Source to Pipe Data",
+              "type": "text"
             }
           ]
         }
