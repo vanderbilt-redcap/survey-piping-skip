@@ -277,6 +277,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         if ($chosenValue != "") {
             $destIDValue = $chosenValue;
         }
+        echo "Dest ID: $destIDValue<br/>";
 
         if (!empty($sourceProjects) && $survey_hash != "") {
             $currentProject = new \Project($project_id);
@@ -291,7 +292,9 @@ class SurveyPipingSkip extends AbstractExternalModule
                 $sourceCompleteField = $sourceForm."_complete";
                 $sourceFormFields = $this->getFieldsOnForm($sourceProject->metadata,$sourceForm);
                 $sourceData = \REDCap::getData($sourceProjectID, 'array', array(), $sourceFormFields, array(), array(), false, false, false, "[".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'");
-
+echo "<pre>";
+print_r($sourceData);
+echo "</pre>";
                 if (!empty($sourceData)) {
                     foreach ($sourceData as $recordID => $currentData) {
                         foreach ($currentData as $eventID => $eventData) {
