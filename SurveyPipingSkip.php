@@ -228,6 +228,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         $assert = function($calcString,$sourceData,$eventID,$projectID,$form,$instance) {
             if ($calcString != "" && $this->getCalculatedData($calcString,$sourceData,$eventID,$projectID,$form,$instance) == "1")
                 return true;
+            echo "Calc String failed<br/>";
             return false;
         };
 
@@ -339,9 +340,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                 }
             }
         }
-        echo "<pre>";
-        print_r($transferData);
-        echo "</pre>";
+
         return array($transferData,$currentIndex,$formIndex);
     }
 
