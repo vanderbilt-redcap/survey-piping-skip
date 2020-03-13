@@ -228,7 +228,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         $assert = function($calcString,$sourceData,$eventID,$projectID,$form,$instance) {
             if ($calcString != "" && $this->getCalculatedData($calcString,$sourceData,$eventID,$projectID,$form,$instance) == "1")
                 return true;
-            echo "Calc String failed<br/>";
+            echo "Calc String failed: $calcString<br/>";
             return false;
         };
 
