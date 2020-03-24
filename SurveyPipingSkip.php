@@ -8,7 +8,6 @@ use ExternalModules\ExternalModules;
 class SurveyPipingSkip extends AbstractExternalModule
 {
     function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
-
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
@@ -37,8 +36,10 @@ class SurveyPipingSkip extends AbstractExternalModule
         $autoSubmit = $this->getProjectSetting('auto_submit');
         $currentProject = new \Project($project_id);
 
-        list ($pageFields, $totalPages) = getPageFields($instrument, $question_by_section);
-        list ($saveBtnText, $hideFields, $isLastPage) = setPageNum($pageFields, $totalPages);
+        $surveyObject = new \Survey();
+
+        list ($pageFields, $totalPages) = $surveyObject::getPageFields($instrument, $question_by_section);
+        list ($saveBtnText, $hideFields, $isLastPage) = $surveyObject::setPageNum($pageFields, $totalPages);
         if (!in_array($currentProject->table_pk,$hideFields)) {
             $hideFields[] = $currentProject->table_pk;
         }
@@ -84,12 +85,12 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 'check_value': value
                             },
                             success: function (data) {
-                                console.log(data);
+                                //console.log(data);
                                 var dataArray = JSON.parse(data);
                                 var metadata = dataArray['field_types'];
-                                console.log(metadata);
+                                //console.log(metadata);
                                 var fielddata = dataArray['data'];
-                                console.log(fielddata);
+                                //console.log(fielddata);
                                 for (fname in metadata) {
                                     if (fname == name) continue;
                                     var datapoint = '';
