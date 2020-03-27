@@ -14,8 +14,9 @@ $currentProject = new \Project($project_id);
 
 list($transferData,$currentIndex,$formIndex) = $module->getMatchingRecordData($return_type, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance, $check_value);
 
-list ($pageFields, $totalPages) = getPageFields($instrument, $question_by_section);
-list ($saveBtnText, $hideFields, $isLastPage) = setPageNum($pageFields, $totalPages);
+$surveyObject = new \Survey();
+list ($pageFields, $totalPages) = $surveyObject::getPageFields($instrument, $question_by_section);
+list ($saveBtnText, $hideFields, $isLastPage) = $surveyObject::setPageNum($pageFields, $totalPages);
 if (!in_array($currentProject->table_pk,$hideFields)) {
     $hideFields[] = $currentProject->table_pk;
 }
