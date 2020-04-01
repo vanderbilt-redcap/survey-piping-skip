@@ -54,14 +54,12 @@ class SurveyPipingSkip extends AbstractExternalModule
         list($sourceData, $currentIndex, $formIndex) = $this->getMatchingRecordData("submit", $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance);
         $sourceForm = $sourceForms[$currentIndex][$formIndex];
 
-        if ($autoSubmit[$currentIndex][$formIndex] == "yes") {
-            if (($instrumentRepeats && $sourceData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$sourceForm . "_complete"] == "2") || (!$instrumentRepeats && $sourceData[$record][$event_id][$sourceForm . "_complete"] == "2")) {
-                echo "<script>
+        if ($autoSubmit[$currentIndex][$formIndex] == "yes" && !empty($sourceData)) {
+            echo "<script>
                     $(document).ready(function() {
                         formSubmitDataEntry();
                     });
                 </script>";
-            }
         }
         else {
             echo "<script>
