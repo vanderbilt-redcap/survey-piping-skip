@@ -55,11 +55,13 @@ class SurveyPipingSkip extends AbstractExternalModule
         $sourceForm = $sourceForms[$currentIndex][$formIndex];
 
         if ($autoSubmit[$currentIndex][$formIndex] == "yes" && !empty($sourceData)) {
-            echo "<script>
+            if (trim($_GET['__reqmsg']) == '') {
+                echo "<script>
                     $(document).ready(function() {
                         formSubmitDataEntry();
                     });
                 </script>";
+            }
         }
         else {
             echo "<script>
