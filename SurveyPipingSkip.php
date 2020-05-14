@@ -68,7 +68,8 @@ class SurveyPipingSkip extends AbstractExternalModule
                 function surveyPipingData(triggerfield) {
                         var value = triggerfield.val();
                         var name = triggerfield.prop('name');
-                        console.log(name);
+                        //console.log(name);
+                        //console.log(value);
                         $.ajax({
                             url: '" . $this->getUrl('ajax_data.php') . "',
                             method: 'post',
@@ -87,6 +88,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                             success: function (data) {
                                 //console.log(data);
                                 var dataArray = JSON.parse(data);
+                                //console.log(dataArray);
                                 var metadata = dataArray['field_types'];
                                 //console.log(metadata);
                                 var fielddata = dataArray['data'];
@@ -96,6 +98,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                     var datapoint = '';
                                     if (fname in fielddata) {
                                         datapoint = fielddata[fname];
+                                        //console.log(datapoint);
                                     }
                                     switch(metadata[fname]) {
                                         case 'text':

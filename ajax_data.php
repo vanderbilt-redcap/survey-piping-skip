@@ -11,6 +11,7 @@ $repeat_instance = $_POST['repeat_instance'];
 $check_value = $_POST['check_value'];
 $question_by_section = $module->findQuestionBySection($project_id,$instrument);
 $currentProject = new \Project($project_id);
+$instrumentRepeats = $currentProject->isRepeatingFormOrEvent($event_id,$instrument);
 
 list($transferData,$currentIndex,$formIndex) = $module->getMatchingRecordData($return_type, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance, $check_value);
 
@@ -34,5 +35,10 @@ foreach ($metaData as $fieldName => $fieldInfo) {
         $fieldList[$fieldName] = $fieldInfo['element_type'];
     }
 }
-
-echo json_encode(array('data'=>$transferData[$record][$event_id],'field_types'=>$fieldList));
+if ($instrumentRepeats) {
+    $returnData = $transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance];
+}
+else {
+    $returnData = $transferData[$record][$event_id];
+}
+echo json_encode(array('data'=>$returnData,'field_types'=>$fieldList));
