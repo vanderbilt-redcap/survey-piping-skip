@@ -31,7 +31,7 @@ $fieldList = array();
 
 $metaData = $currentProject->metadata;
 foreach ($metaData as $fieldName => $fieldInfo) {
-    if ($fieldInfo['form_name'] == $instrument && in_array($fieldName,$fieldsOnPage)) {
+    if ($fieldInfo['form_name'] == $instrument && in_array($fieldName,$fieldsOnPage) && $fieldInfo['element_type'] != 'descriptive') {
         $fieldList[$fieldName] = $fieldInfo['element_type'];
     }
 }
