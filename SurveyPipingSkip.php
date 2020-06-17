@@ -98,9 +98,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                     var datapoint = '';
                                     if (fname in fielddata) {
                                         datapoint = fielddata[fname];
-                                        //console.log(datapoint);
-                                    }
-                                    switch(metadata[fname]) {
+                                        switch(metadata[fname]) {
                                         case 'text':
                                             $('input[name=\"'+fname+'\"]').val(datapoint);
                                             break;
@@ -122,6 +120,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                             break;
                                         default:
                                             break;
+                                    }
                                     }
                                 }
                                 //$('#'+destination).css('display','inline-block').html(data);
