@@ -86,15 +86,15 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 'check_value': value
                             },
                             success: function (data) {
-                                console.log(data);
+                                //console.log(data);
                                 var dataArray = JSON.parse(data);
-                                console.log(dataArray);
+                                //console.log(dataArray);
                                 var metadata = dataArray['field_types'];
-                                console.log(metadata);
+                                //console.log(metadata);
                                 var fielddata = dataArray['data'];
-                                console.log(fielddata);
+                                //console.log(fielddata);
                                 for (fname in metadata) {
-                                    if (fname == name || (fielddata === undefined || dataArray['data'] === null)) continue;
+                                    if (fname == name) continue;
                                     var datapoint = '';
                                     if (fname in fielddata) {
                                         datapoint = fielddata[fname];
@@ -294,16 +294,8 @@ class SurveyPipingSkip extends AbstractExternalModule
                 $sourceForm = $sourceForms[$currentIndex][$formIndex];
                 $sourceCompleteField = $sourceForm."_complete";
                 $sourceFormFields = $this->getFieldsOnForm($sourceProject->metadata,$sourceForm);
-                echo "Logic: [".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'<br/>";
-                echo "Looking at $sourceProjectID<br/>";
-                echo "<pre>";
-                print_r($sourceFormFields);
-                echo "</pre>";
                 $sourceData = \REDCap::getData($sourceProjectID, 'array', array(), $sourceFormFields, array(), array(), false, false, false, "[".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'");
-echo "Source Data:<br/>";
-echo "<pre>";
-print_r($sourceData);
-echo "</pre>";
+
                 if (!empty($sourceData)) {
                     foreach ($sourceData as $recordID => $currentData) {
                         foreach ($currentData as $eventID => $eventData) {
