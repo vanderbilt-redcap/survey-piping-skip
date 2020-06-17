@@ -36,9 +36,17 @@ foreach ($metaData as $fieldName => $fieldInfo) {
     }
 }
 if ($instrumentRepeats) {
+    echo "Repeating<br/>";
+    echo "<pre>";
+    print_r($transferData);
+    echo "</pre>";
     $returnData = $transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance];
 }
 else {
+    echo "Nonrepeating<br/>";
+    echo "<pre>";
+    print_r($transferData);
+    echo "</pre>";
     $returnData = $transferData[$record][$event_id];
 }
 echo json_encode(array('data'=>$returnData,'field_types'=>$fieldList));
