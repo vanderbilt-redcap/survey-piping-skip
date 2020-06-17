@@ -35,6 +35,9 @@ foreach ($metaData as $fieldName => $fieldInfo) {
         $fieldList[$fieldName] = $fieldInfo['element_type'];
     }
 }
+echo "<pre>";
+print_r($transferData);
+echo "</pre>";
 if ($instrumentRepeats) {
     $returnData = $transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance];
 }
