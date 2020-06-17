@@ -294,6 +294,11 @@ class SurveyPipingSkip extends AbstractExternalModule
                 $sourceForm = $sourceForms[$currentIndex][$formIndex];
                 $sourceCompleteField = $sourceForm."_complete";
                 $sourceFormFields = $this->getFieldsOnForm($sourceProject->metadata,$sourceForm);
+                echo "Logic: [".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'<br/>";
+                echo "Looking at $sourceProjectID<br/>";
+                echo "<pre>";
+                print_r($sourceFormFields);
+                echo "</pre>";
                 $sourceData = \REDCap::getData($sourceProjectID, 'array', array(), $sourceFormFields, array(), array(), false, false, false, "[".$sourcePartIDs[$currentIndex]."] = '".$destIDValue."'");
 echo "Source Data:<br/>";
 echo "<pre>";
