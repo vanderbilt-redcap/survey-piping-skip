@@ -100,10 +100,10 @@ class SurveyPipingSkip extends AbstractExternalModule
                                         datapoint = fielddata[fname];
                                         switch(metadata[fname]) {
                                         case 'text':
-                                            $('input[name=\"'+fname+'\"]').val(datapoint);
+                                            $('input[name=\"'+fname+'\"]').val(datapoint).change();
                                             break;
                                         case 'textarea':
-                                            $('textarea[name=\"'+fname+'\"]').val(datapoint);
+                                            $('textarea[name=\"'+fname+'\"]').val(datapoint).change();
                                             break;
                                         case 'radio':
                                         case 'yesno':
