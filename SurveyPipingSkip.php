@@ -34,6 +34,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         $destPartIDs = $this->getProjectSetting('dest_part_id');
         $sourceForms = $this->getProjectSetting('source_form');
         $autoSubmit = $this->getProjectSetting('auto_submit');
+        $pipeAll = $this->getProjectSetting('pipe_all_data');
         $currentProject = new \Project($project_id);
 
         $surveyObject = new \Survey();
@@ -64,7 +65,8 @@ class SurveyPipingSkip extends AbstractExternalModule
             }
         }
         else {
-            echo "<script>
+            if ($pipeAll[$currentIndex] == "yes") {
+                echo "<script>
                 function surveyPipingData(triggerfield) {
                         var value = triggerfield.val();
                         var name = triggerfield.prop('name');
@@ -96,6 +98,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 for (fname in metadata) {
                                     if (fname == name) continue
                                     if (fielddata === undefined || dataArray['data'] === null) {
+                                        continue;
                                         fielddata = [];
                                         fielddata[fname] = '';
                                     }
@@ -134,14 +137,15 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 console.log(errorThrown);
                             }
                         });
-                }
-                $(document).ready(function() {    
-                    $('[name=\"" . $destPartIDs[$currentIndex] . "\"]').change(function() {
-                        //console.log($(this).val());
-                        surveyPipingData($(this));
+                    }
+                    $(document).ready(function() {    
+                        $('[name=\"" . $destPartIDs[$currentIndex] . "\"]').change(function() {
+                            //console.log($(this).val());
+                            surveyPipingData($(this));
+                        });
                     });
-                });
-            </script>";
+                </script>";
+            }
         }
     }
 
