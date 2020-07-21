@@ -15,6 +15,10 @@
 
   "framework-version": 2,
 
+  "no-auth-pages":[
+    "ajax_data.php"
+  ],
+
   "permissions": [
     "select_data",
     "redcap_save_record",
