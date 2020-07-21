@@ -72,6 +72,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                         var name = triggerfield.prop('name');
                         //console.log(name);
                         //console.log(value);
+                        console.log('".$this->getUrl('ajax_data.php')."');
                         $.ajax({
                             url: '" . $this->getUrl('ajax_data.php') . "',
                             method: 'post',
