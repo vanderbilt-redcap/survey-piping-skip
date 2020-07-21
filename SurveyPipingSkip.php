@@ -88,7 +88,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 'check_value': value
                             },
                             success: function (data) {
-                                //console.log(data);
+                                console.log(data);
                                 var dataArray = JSON.parse(data);
                                 //console.log(dataArray);
                                 var metadata = dataArray['field_types'];
