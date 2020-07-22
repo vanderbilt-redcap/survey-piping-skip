@@ -1,9 +1,9 @@
 <?php
+define("NOAUTH",true);
 echo "<pre>";
 print_r($_SESSION);
 echo "</pre>";
 session_start();
-define("NOAUTH",true);
 echo "<pre>";
 print_r($_SESSION);
 echo "</pre>";
