@@ -8,6 +8,7 @@ use ExternalModules\ExternalModules;
 class SurveyPipingSkip extends AbstractExternalModule
 {
     function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
+        echo $this->getUrl('ajax_data.php');
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
