@@ -1,5 +1,4 @@
 <?php
-define("NOAUTH",true);
 $return_type = $_POST['return_type'];
 $project_id = $_POST['project_id'];
 $record = $_POST['record'];
