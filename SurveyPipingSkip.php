@@ -30,7 +30,12 @@ class SurveyPipingSkip extends AbstractExternalModule
 
     function redcap_survey_page_top($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance = 1)
     {
-        echo $this->getUrl('ajax_data.php');
+        session_start();
+        if (empty($_SESSION['survey_piping_token'])) {
+            $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
+        }
+        $token = $_SESSION['survey_piping_token'];
+
         $question_by_section = $this->findQuestionBySection($project_id,$instrument);
 
         $destPartIDs = $this->getProjectSetting('dest_part_id');
@@ -88,6 +93,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 'survey_hash': '" . $survey_hash . "',
                                 'response_id': '" . $response_id . "',
                                 'repeat_instance': '" . $repeat_instance . "',
+                                'token': '".$token."',
                                 'check_value': value
                             },
                             success: function (data) {

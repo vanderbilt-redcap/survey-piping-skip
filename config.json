@@ -15,16 +15,6 @@
 
   "framework-version": 2,
 
-  "links": {
-    "project": [
-      {
-        "name": "Ajax Data",
-        "icon": "fas fa-receipt",
-        "url": "ajax_data.php?NOAUTH"
-      }
-    ]
-  },
-
   "no-auth-pages":[
     "ajax_data.php"
   ],
@@ -120,5 +110,11 @@
         }
       ]
     }
-  ]
+  ],
+  "compatibility": {
+    "php-version-min": "7.0.0",
+    "php-version-max": "",
+    "redcap-version-min": "",
+    "redcap-version-max": ""
+  }
 }
