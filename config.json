@@ -26,7 +26,7 @@
   },
 
   "no-auth-pages":[
-    "ajax_data.php"
+    "ajax_data"
   ],
 
   "permissions": [

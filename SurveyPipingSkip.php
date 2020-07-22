@@ -30,7 +30,7 @@ class SurveyPipingSkip extends AbstractExternalModule
 
     function redcap_survey_page_top($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance = 1)
     {
-        session_start();
+        //`session_start();
         if (empty($_SESSION['survey_piping_token'])) {
             $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
         }
