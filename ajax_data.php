@@ -1,7 +1,16 @@
 <?php
-define("NOAUTH",true);
+echo "<pre>";
+print_r($_SESSION);
+echo "</pre>";
 session_start();
-
+define("NOAUTH",true);
+echo "<pre>";
+print_r($_SESSION);
+echo "</pre>";
+echo "<pre>";
+print_r($_POST);
+echo "</pre>";
+echo "Token: ".$_SESSION['survey_piping_token']."<br/>";
 $return_type = $_POST['return_type'];
 $project_id = $_POST['project_id'];
 $record = $_POST['record'];

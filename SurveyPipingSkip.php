@@ -35,7 +35,9 @@ class SurveyPipingSkip extends AbstractExternalModule
             $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
         }
         $token = $_SESSION['survey_piping_token'];
-
+echo "<pre>";
+print_r($_SESSION);
+echo "</pre>";
         $question_by_section = $this->findQuestionBySection($project_id,$instrument);
 
         $destPartIDs = $this->getProjectSetting('dest_part_id');
