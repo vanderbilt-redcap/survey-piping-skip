@@ -1,12 +1,13 @@
 <?php
-session_start();
 
+$sess_id_1 = session_id();
+$sess_id_2 = "survey-module";
+session_write_close();
+session_id($sess_id_2);
+session_name($sess_id_2);
+session_start();
 define("NOAUTH",true);
 
-echo "<pre>";
-print_r($_SESSION);
-echo "</pre>";
-session_start();
 echo "<pre>";
 print_r($_SESSION);
 echo "</pre>";
@@ -62,3 +63,6 @@ if (!empty($_POST['token'])) {
         echo json_encode(array('data' => $returnData, 'field_types' => $fieldList));
     }
 }
+session_write_close();
+session_id($sess_id_1);
+session_start();
