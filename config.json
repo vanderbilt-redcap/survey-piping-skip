@@ -15,16 +15,6 @@
 
   "framework-version": 2,
 
-  "links": {
-    "project": [
-      {
-        "name": "Ajax",
-        "icon": "fas fa-receipt",
-        "url": "ajax_data.php?NOAUTH"
-      }
-    ]
-  },
-
   "no-auth-pages":[
     "ajax_data"
   ],
