@@ -84,7 +84,7 @@ echo "</pre>";
                         //console.log(value);
                         console.log('".$this->getUrl('ajax_data.php')."&NOAUTH');
                         $.ajax({
-                            url: '" . $this->getUrl('ajax_data.php') . "',
+                            url: '" . $this->getUrl('ajax_data.php') . "&NOAUTH',
                             method: 'post',
                             data: {
                                 'return_type': 'data', 
