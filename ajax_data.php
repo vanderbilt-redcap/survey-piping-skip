@@ -1,22 +1,13 @@
 <?php
 session_start();
-echo "<pre>";
-print_r($_SESSION);
-echo "</pre>";
 $sess_id_1 = session_id();
 $sess_id_2 = "survey-module";
 session_write_close();
 session_id($sess_id_2);
 session_start();
+
 define("NOAUTH",true);
 
-echo "<pre>";
-print_r($_SESSION);
-echo "</pre>";
-echo "<pre>";
-print_r($_POST);
-echo "</pre>";
-echo "Token: ".$_SESSION['survey_piping_token']."<br/>";
 $return_type = $_POST['return_type'];
 $project_id = $_POST['project_id'];
 $record = $_POST['record'];
@@ -68,6 +59,3 @@ if (!empty($_POST['token'])) {
 session_write_close();
 session_id($sess_id_1);
 session_start();
-echo "<pre>";
-print_r($_SESSION);
-echo "</pre>";

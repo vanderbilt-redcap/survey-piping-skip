@@ -53,23 +53,17 @@ class SurveyPipingSkip extends AbstractExternalModule
 
     function redcap_survey_page_top($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance = 1)
     {
-        echo "<pre>";
-        print_r($_SESSION);
-        echo "</pre>";
         $sess_id_1 = session_id();
         $sess_id_2 = "survey-module";
-        echo "URL: ".$this->getUrl('ajax_data.php')."&NOAUTH<br/>";
         session_write_close();
         session_id($sess_id_2);
         session_start();
-        echo "Session name: ".session_id()."<br/>";
+
         if (empty($_SESSION['survey_piping_token'])) {
             $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
         }
         $token = $_SESSION['survey_piping_token'];
-echo "<pre>";
-print_r($_SESSION);
-echo "</pre>";
+
         $question_by_section = $this->findQuestionBySection($project_id,$instrument);
 
         $destPartIDs = $this->getProjectSetting('dest_part_id');
@@ -193,9 +187,6 @@ echo "</pre>";
         session_write_close();
         session_id($sess_id_1);
         session_start();
-        echo "<pre>";
-        print_r($_SESSION);
-        echo "</pre>";
     }
 
     function getCalculatedData($calcString,$recordData,$event_id,$project_id,$repeat_instrument,$repeat_instance=null) {
