@@ -1,5 +1,7 @@
 <?php
-
+echo "<pre>";
+print_r($_SESSION);
+echo "</pre>";
 $sess_id_1 = session_id();
 $sess_id_2 = "survey-module";
 session_write_close();
@@ -66,3 +68,6 @@ if (!empty($_POST['token'])) {
 session_write_close();
 session_id($sess_id_1);
 session_start();
+echo "<pre>";
+print_r($_SESSION);
+echo "</pre>";
