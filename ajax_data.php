@@ -1,4 +1,7 @@
 <?php
+session_start();
+
+define("NOAUTH",true);
 
 echo "<pre>";
 print_r($_SESSION);
