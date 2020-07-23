@@ -15,8 +15,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         $sess_id_1 = session_id();
         $sess_id_2 = "survey-module";
         session_write_close();
-        session_id($sess_id_2);
-        session_name($sess_id_2);
+        session_id($sess_id_2);\
         session_start();
         echo "Session name: ".session_id()."<br/>";
         if (empty($_SESSION['survey_piping_token'])) {

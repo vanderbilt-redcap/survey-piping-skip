@@ -1,4 +1,5 @@
 <?php
+session_start();
 echo "<pre>";
 print_r($_SESSION);
 echo "</pre>";
@@ -6,7 +7,6 @@ $sess_id_1 = session_id();
 $sess_id_2 = "survey-module";
 session_write_close();
 session_id($sess_id_2);
-session_name($sess_id_2);
 session_start();
 define("NOAUTH",true);
 
