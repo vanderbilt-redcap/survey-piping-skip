@@ -8,29 +8,6 @@ use ExternalModules\ExternalModules;
 class SurveyPipingSkip extends AbstractExternalModule
 {
     function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
-        //echo $this->getUrl('ajax_data.php');
-        echo "<pre>";
-        print_r($_SESSION);
-        echo "</pre>";
-        $sess_id_1 = session_id();
-        $sess_id_2 = "survey-module";
-        session_write_close();
-        session_id($sess_id_2);\
-        session_start();
-        echo "Session name: ".session_id()."<br/>";
-        if (empty($_SESSION['survey_piping_token'])) {
-            $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
-        }
-        $token = $_SESSION['survey_piping_token'];
-        echo "<pre>";
-        print_r($_SESSION);
-        echo "</pre>";
-        session_write_close();
-        session_id($sess_id_1);
-        session_start();
-        echo "<pre>";
-        print_r($_SESSION);
-        echo "</pre>";
 
     }
 
