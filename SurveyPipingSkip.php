@@ -2,13 +2,14 @@
 
 namespace Vanderbilt\SurveyPipingSkip;
 
+use DateTime;
 use ExternalModules\AbstractExternalModule;
 use ExternalModules\ExternalModules;
 
 class SurveyPipingSkip extends AbstractExternalModule
 {
     function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
-
+        //list($transferData,$currentIndex,$formIndex) = $this->getMatchingRecordData("submit",$project_id,$record,$instrument,$event_id,$group_id,null,null,$repeat_instance);
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
@@ -79,6 +80,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         else {
             if ($pipeAll[$currentIndex] == "yes") {
                 echo "<script>
+                var lastFieldData = [];
                 function surveyPipingData(triggerfield) {
                         var value = triggerfield.val();
                         var name = triggerfield.prop('name');
@@ -109,41 +111,47 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 console.log('Metadata: '+metadata);
                                 var fielddata = dataArray['data'];
                                 console.log('Field Data: '+fielddata);
-                                for (fname in metadata) {
-                                    if (fname == name) continue
-                                    if (fielddata === undefined || dataArray['data'] === null) {
-                                        continue;
-                                        fielddata = [];
-                                        fielddata[fname] = '';
-                                    }
-                                    var datapoint = '';
-                                    if (fname in fielddata) {
-                                        datapoint = fielddata[fname];
-                                        switch(metadata[fname]) {
-                                        case 'text':
-                                            $('input[name=\"'+fname+'\"]').val(datapoint).change();
-                                            break;
-                                        case 'textarea':
-                                            $('textarea[name=\"'+fname+'\"]').val(datapoint).change();
-                                            break;
-                                        case 'radio':
-                                        case 'yesno':
-                                        case 'truefalse':
-                                            $('input[name=\"'+fname+'___radio\"][value=\"'+datapoint+'\"]').click();
-                                            break;
-                                        case 'checkbox':
-                                            for (data in datapoint) {
-                                                $('#id-__chk__'+fname+'_RC_'+datapoint[data]).click();
+                                if (!arraysEqual(fielddata,lastFieldData)) {
+                                    for (fname in metadata) {
+                                        if (fname == name) continue;
+                                        if (fielddata === undefined || dataArray['data'] === null) {
+                                            continue;
+                                            fielddata = [];
+                                            fielddata[fname] = '';
+                                        }
+                                        var datapoint = '';
+                                        if (fname in fielddata) {
+                                            datapoint = fielddata[fname];
+                                            switch(metadata[fname]) {
+                                                case 'text':
+                                                    $('input[name=\"'+fname+'\"]').val(datapoint).change();
+                                                    break;
+                                                case 'textarea':
+                                                    $('textarea[name=\"'+fname+'\"]').val(datapoint).change();
+                                                    break;
+                                                case 'radio':
+                                                case 'yesno':
+                                                case 'truefalse':
+                                                    $('input[name=\"'+fname+'___radio\"][value=\"'+datapoint+'\"]').click();
+                                                    break;
+                                                case 'checkbox':
+                                                    for (data in datapoint) {
+                                                        $('#id-__chk__'+fname+'_RC_'+datapoint[data]).click();
+                                                    }
+                                                    break;
+                                                case 'select':
+                                                    $('select[name=\"'+fname+'\"]').val(datapoint).change();
+                                                    break;
+                                                default:
+                                                    break;
                                             }
-                                            break;
-                                        case 'select':
-                                            $('select[name=\"'+fname+'\"]').val(datapoint).change();
-                                            break;
-                                        default:
-                                            break;
-                                    }
+                                        }
                                     }
                                 }
+                                else {
+                                    console.log('Stopped for duplicate');
+                                }
+                                lastFieldData = fielddata;
                                 //$('#'+destination).css('display','inline-block').html(data);
                                 //$('#accordion > div').accordion({ header: 'h3', collapsible: true, active: false });
                             },
@@ -158,6 +166,21 @@ class SurveyPipingSkip extends AbstractExternalModule
                             surveyPipingData($(this));
                         });
                     });
+                    function arraysEqual(a, b) {
+                      if (a === b) return true;
+                      if (a == null || b == null) return false;
+                      if (a.length !== b.length) return false;
+                    
+                      // If you don't care about the order of the elements inside
+                      // the array, you should sort both arrays here.
+                      // Please note that calling sort on an array will modify that array.
+                      // you might want to clone your array first.
+                    
+                      for (var i = 0; i < a.length; ++i) {
+                        if (a[i] !== b[i]) return false;
+                      }
+                      return true;
+                    }
                 </script>";
             }
         }
@@ -331,6 +354,12 @@ class SurveyPipingSkip extends AbstractExternalModule
 
                                         foreach ($subInstrumentData[$repeat_instance] as $fieldName => $subFieldData) {
                                             if (!in_array($fieldName,$sourceFormFields)) continue;
+                                            if ($returnType == 'data' && $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
+                                                $subFieldData = date($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'),strtotime($subFieldData));
+                                                if (!$this->validateDate($fieldData,$this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'))) {
+                                                    $subFieldData = "";
+                                                }
+                                            }
                                             if ($fieldName == $sourceCompleteField && $returnType == "submit") {
                                                 $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
                                                 //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
@@ -348,6 +377,12 @@ class SurveyPipingSkip extends AbstractExternalModule
 
                                 foreach ($eventData as $fieldName => $fieldData) {
                                     if (!in_array($fieldName,$sourceFormFields)) continue;
+                                    if ($returnType == 'data' && $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
+                                        $fieldData = date($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'),strtotime($fieldData));
+                                        if (!$this->validateDate($fieldData,$this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'))) {
+                                            $fieldData = "";
+                                        }
+                                    }
                                     if ($fieldName == $sourceCompleteField && $returnType == "submit") {
                                         $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
                                         //$transferData[$record][$event_id][$fieldName] = $fieldData;
@@ -389,5 +424,98 @@ class SurveyPipingSkip extends AbstractExternalModule
         $javaString = "";
 
         return $javaString;
+    }
+
+    /*
+	 * Determine the correct date formatting based on a field's element validation.
+	 * @param $elementValidationType The element validation for the data field being examined.
+	 * @param $type Either 'php' or 'javascript', based on where the data format string is being injected
+	 * @return Date format string
+	 */
+    function getDateFormat($elementValidationType, $fieldName, $type) {
+        $returnString = "";
+        switch ($elementValidationType) {
+            case "date_mdy":
+                if ($type == "php") {
+                    $returnString = "m-d-Y";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+'-'+$fieldName.getUTCFullYear()";
+                }
+                break;
+            case "date_dmy":
+                if ($type == "php") {
+                    $returnString = "d-m-Y";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCDate())+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+$fieldName.getUTCFullYear()";
+                }
+                break;
+            case "date_ymd":
+                if ($type == "php") {
+                    $returnString = "Y-m-d";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "$fieldName.getUTCFullYear()+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())";
+                }
+                break;
+            case "datetime_mdy":
+                if ($type == "php") {
+                    $returnString = "m-d-Y H:i";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())";
+                }
+                break;
+            case "datetime_dmy":
+                if ($type == "php") {
+                    $returnString = "d-m-Y H:i";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCDate())+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())";
+                }
+                break;
+            case "datetime_ymd":
+                if ($type == "php") {
+                    $returnString = "Y-m-d H:i";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "$fieldName.getUTCFullYear()+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())";
+                }
+                break;
+            case "datetime_seconds_mdy":
+                if ($type == "php") {
+                    $returnString = "m-d-Y H:i:s";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())+':'+addZ($fieldName.getUTCSeconds())";
+                }
+                break;
+            case "datetime_seconds_dmy":
+                if ($type == "php") {
+                    $returnString = "d-m-Y H:i:s";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCDate())+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())+':'+addZ($fieldName.getUTCSeconds())";
+                }
+                break;
+            case "datetime_seconds_ymd":
+                if ($type == "php") {
+                    $returnString = "Y-m-d H:i:s";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "$fieldName.getUTCFullYear()+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())+':'+addZ($fieldName.getUTCSeconds())";
+                }
+                break;
+            default:
+                $returnString = '';
+        }
+        return $returnString;
+    }
+
+    function validateDate($date,$format='Y-m-d') {
+        $d = DateTime::createFromFormat($format, $date);
+        // The Y ( 4 digits year ) returns TRUE for any integer with any number of digits so changing the comparison from == to === fixes the issue.
+        return $d && $d->format($format) === $date;
     }
 }
