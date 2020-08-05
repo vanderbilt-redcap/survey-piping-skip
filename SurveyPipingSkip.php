@@ -10,11 +10,6 @@ class SurveyPipingSkip extends AbstractExternalModule
 {
     function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
         //list($transferData,$currentIndex,$formIndex) = $this->getMatchingRecordData("submit",$project_id,$record,$instrument,$event_id,$group_id,null,null,$repeat_instance);
-        $the_date = strtotime("2010-01-19 00:00:00");
-        echo(date_default_timezone_get() . "<br />");
-        echo(date("Y-d-mTG:i:sz",$the_date) . "<br />");
-        echo(date_default_timezone_set("UTC") . "<br />");
-        echo(date("Y-d-mTG:i:sz", $the_date) . "<br />");
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
