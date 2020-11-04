@@ -8,6 +8,7 @@ use ExternalModules\ExternalModules;
 class SurveyPipingSkip extends AbstractExternalModule
 {
     function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
+        //list($transferData,$currentIndex,$formIndex) = $this->getMatchingRecordData("submit",$project_id,$record,$instrument,$event_id,$group_id,null,null,$repeat_instance);
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
@@ -29,11 +30,23 @@ class SurveyPipingSkip extends AbstractExternalModule
 
     function redcap_survey_page_top($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance = 1)
     {
+        $sess_id_1 = session_id();
+        $sess_id_2 = "survey-module";
+        session_write_close();
+        session_id($sess_id_2);
+        session_start();
+
+        if (empty($_SESSION['survey_piping_token'])) {
+            $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
+        }
+        $token = $_SESSION['survey_piping_token'];
+
         $question_by_section = $this->findQuestionBySection($project_id,$instrument);
 
         $destPartIDs = $this->getProjectSetting('dest_part_id');
         $sourceForms = $this->getProjectSetting('source_form');
         $autoSubmit = $this->getProjectSetting('auto_submit');
+        $pipeAll = $this->getProjectSetting('pipe_all_data');
         $currentProject = new \Project($project_id);
 
         $surveyObject = new \Survey();
@@ -64,14 +77,16 @@ class SurveyPipingSkip extends AbstractExternalModule
             }
         }
         else {
-            echo "<script>
+            if ($pipeAll[$currentIndex] == "yes") {
+                echo "<script>
+                var lastFieldData = [];
                 function surveyPipingData(triggerfield) {
                         var value = triggerfield.val();
                         var name = triggerfield.prop('name');
                         //console.log(name);
                         //console.log(value);
                         $.ajax({
-                            url: '" . $this->getUrl('ajax_data.php') . "',
+                            url: '" . $this->getUrl('ajax_data.php') . "&NOAUTH',
                             method: 'post',
                             data: {
                                 'return_type': 'data', 
@@ -92,37 +107,48 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 var metadata = dataArray['field_types'];
                                 //console.log(metadata);
                                 var fielddata = dataArray['data'];
-                                //console.log(fielddata);
-                                for (fname in metadata) {
-                                    if (fname == name || (fielddata === undefined || dataArray['data'] === null)) continue;
-                                    var datapoint = '';
-                                    if (fname in fielddata) {
-                                        datapoint = fielddata[fname];
-                                        switch(metadata[fname]) {
-                                        case 'text':
-                                            $('input[name=\"'+fname+'\"]').val(datapoint);
-                                            break;
-                                        case 'textarea':
-                                            $('textarea[name=\"'+fname+'\"]').val(datapoint);
-                                            break;
-                                        case 'radio':
-                                        case 'yesno':
-                                        case 'truefalse':
-                                            $('input[name=\"'+fname+'___radio\"][value=\"'+datapoint+'\"]').click();
-                                            break;
-                                        case 'checkbox':
-                                            for (data in datapoint) {
-                                                $('#id-__chk__'+fname+'_RC_'+datapoint[data]).click();
+                                //console.log('Field Data: '+fielddata);
+                                if (!arraysEqual(fielddata,lastFieldData)) {
+                                    for (fname in metadata) {
+                                        if (fname == name) continue;
+                                        if (fielddata === undefined || dataArray['data'] === null) {
+                                            continue;
+                                            fielddata = [];
+                                            fielddata[fname] = '';
+                                        }
+                                        var datapoint = '';
+                                        if (fname in fielddata) {
+                                            datapoint = fielddata[fname];
+                                            switch(metadata[fname]) {
+                                                case 'text':
+                                                    $('input[name=\"'+fname+'\"]').val(datapoint).change();
+                                                    break;
+                                                case 'textarea':
+                                                    $('textarea[name=\"'+fname+'\"]').val(datapoint).change();
+                                                    break;
+                                                case 'radio':
+                                                case 'yesno':
+                                                case 'truefalse':
+                                                    $('input[name=\"'+fname+'___radio\"][value=\"'+datapoint+'\"]').click();
+                                                    break;
+                                                case 'checkbox':
+                                                    for (data in datapoint) {
+                                                        $('#id-__chk__'+fname+'_RC_'+datapoint[data]).click();
+                                                    }
+                                                    break;
+                                                case 'select':
+                                                    $('select[name=\"'+fname+'\"]').val(datapoint).change();
+                                                    break;
+                                                default:
+                                                    break;
                                             }
-                                            break;
-                                        case 'select':
-                                            $('select[name=\"'+fname+'\"]').val(datapoint).change();
-                                            break;
-                                        default:
-                                            break;
-                                    }
+                                        }
                                     }
                                 }
+                                else {
+                                    //console.log('Stopped for duplicate');
+                                }
+                                lastFieldData = fielddata;
                                 //$('#'+destination).css('display','inline-block').html(data);
                                 //$('#accordion > div').accordion({ header: 'h3', collapsible: true, active: false });
                             },
@@ -130,15 +156,34 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 console.log(errorThrown);
                             }
                         });
-                }
-                $(document).ready(function() {    
-                    $('[name=\"" . $destPartIDs[$currentIndex] . "\"]').change(function() {
-                        //console.log($(this).val());
-                        surveyPipingData($(this));
+                    }
+                    $(document).ready(function() {    
+                        $('[name=\"" . $destPartIDs[$currentIndex] . "\"]').change(function() {
+                            //console.log($(this).val());
+                            surveyPipingData($(this));
+                        });
                     });
-                });
-            </script>";
+                    function arraysEqual(a, b) {
+                      if (a === b) return true;
+                      if (a == null || b == null) return false;
+                      if (a.length !== b.length) return false;
+                    
+                      // If you don't care about the order of the elements inside
+                      // the array, you should sort both arrays here.
+                      // Please note that calling sort on an array will modify that array.
+                      // you might want to clone your array first.
+                    
+                      for (var i = 0; i < a.length; ++i) {
+                        if (a[i] !== b[i]) return false;
+                      }
+                      return true;
+                    }
+                </script>";
+            }
         }
+        session_write_close();
+        session_id($sess_id_1);
+        session_start();
     }
 
     function getCalculatedData($calcString,$recordData,$event_id,$project_id,$repeat_instrument,$repeat_instance=null) {
@@ -306,9 +351,11 @@ class SurveyPipingSkip extends AbstractExternalModule
 
                                         foreach ($subInstrumentData[$repeat_instance] as $fieldName => $subFieldData) {
                                             if (!in_array($fieldName,$sourceFormFields)) continue;
-                                            if ($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
-                                                $dateFormat = $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php');
-                                                $subFieldData = date($dateFormat,strtotime($subFieldData));
+                                            if ($returnType == 'data' && $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
+                                                $subFieldData = date($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'),strtotime($subFieldData));
+                                                if (!$this->validateDate($fieldData,$this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'))) {
+                                                    $subFieldData = "";
+                                                }
                                             }
                                             if ($fieldName == $sourceCompleteField && $returnType == "submit") {
                                                 $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
@@ -327,9 +374,11 @@ class SurveyPipingSkip extends AbstractExternalModule
 
                                 foreach ($eventData as $fieldName => $fieldData) {
                                     if (!in_array($fieldName,$sourceFormFields)) continue;
-                                    if ($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
-                                        $dateFormat = $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php');
-                                        $fieldData = date($dateFormat,strtotime($fieldData));
+                                    if ($returnType == 'data' && $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
+                                        $fieldData = date($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'),strtotime($fieldData));
+                                        if (!$this->validateDate($fieldData,$this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php'))) {
+                                            $fieldData = "";
+                                        }
                                     }
                                     if ($fieldName == $sourceCompleteField && $returnType == "submit") {
                                         $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
@@ -459,5 +508,11 @@ class SurveyPipingSkip extends AbstractExternalModule
                 $returnString = '';
         }
         return $returnString;
+    }
+
+    function validateDate($date,$format='Y-m-d') {
+        $d = DateTime::createFromFormat($format, $date);
+        // The Y ( 4 digits year ) returns TRUE for any integer with any number of digits so changing the comparison from == to === fixes the issue.
+        return $d && $d->format($format) === $date;
     }
 }

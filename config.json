@@ -15,6 +15,10 @@
 
   "framework-version": 2,
 
+  "no-auth-pages":[
+    "ajax_data"
+  ],
+
   "permissions": [
     "select_data",
     "redcap_save_record",
@@ -106,5 +110,11 @@
         }
       ]
     }
-  ]
+  ],
+  "compatibility": {
+    "php-version-min": "7.0.0",
+    "php-version-max": "",
+    "redcap-version-min": "",
+    "redcap-version-max": ""
+  }
 }
