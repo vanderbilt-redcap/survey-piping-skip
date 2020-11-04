@@ -306,6 +306,10 @@ class SurveyPipingSkip extends AbstractExternalModule
 
                                         foreach ($subInstrumentData[$repeat_instance] as $fieldName => $subFieldData) {
                                             if (!in_array($fieldName,$sourceFormFields)) continue;
+                                            if ($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
+                                                $dateFormat = $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php');
+                                                $subFieldData = date($dateFormat,strtotime($subFieldData));
+                                            }
                                             if ($fieldName == $sourceCompleteField && $returnType == "submit") {
                                                 $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
                                                 //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
@@ -323,6 +327,10 @@ class SurveyPipingSkip extends AbstractExternalModule
 
                                 foreach ($eventData as $fieldName => $fieldData) {
                                     if (!in_array($fieldName,$sourceFormFields)) continue;
+                                    if ($this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php') != "") {
+                                        $dateFormat = $this->getDateFormat($currentProject->metadata[$fieldName]['element_validation_type'],'','php');
+                                        $fieldData = date($dateFormat,strtotime($fieldData));
+                                    }
                                     if ($fieldName == $sourceCompleteField && $returnType == "submit") {
                                         $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
                                         //$transferData[$record][$event_id][$fieldName] = $fieldData;
@@ -364,5 +372,92 @@ class SurveyPipingSkip extends AbstractExternalModule
         $javaString = "";
 
         return $javaString;
+    }
+
+    /*
+	 * Determine the correct date formatting based on a field's element validation.
+	 * @param $elementValidationType The element validation for the data field being examined.
+	 * @param $type Either 'php' or 'javascript', based on where the data format string is being injected
+	 * @return Date format string
+	 */
+    function getDateFormat($elementValidationType, $fieldName, $type) {
+        $returnString = "";
+        switch ($elementValidationType) {
+            case "date_mdy":
+                if ($type == "php") {
+                    $returnString = "m-d-Y";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+'-'+$fieldName.getUTCFullYear()";
+                }
+                break;
+            case "date_dmy":
+                if ($type == "php") {
+                    $returnString = "d-m-Y";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCDate())+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+$fieldName.getUTCFullYear()";
+                }
+                break;
+            case "date_ymd":
+                if ($type == "php") {
+                    $returnString = "Y-m-d";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "$fieldName.getUTCFullYear()+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())";
+                }
+                break;
+            case "datetime_mdy":
+                if ($type == "php") {
+                    $returnString = "m-d-Y H:i";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())";
+                }
+                break;
+            case "datetime_dmy":
+                if ($type == "php") {
+                    $returnString = "d-m-Y H:i";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCDate())+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())";
+                }
+                break;
+            case "datetime_ymd":
+                if ($type == "php") {
+                    $returnString = "Y-m-d H:i";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "$fieldName.getUTCFullYear()+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())";
+                }
+                break;
+            case "datetime_seconds_mdy":
+                if ($type == "php") {
+                    $returnString = "m-d-Y H:i:s";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())+':'+addZ($fieldName.getUTCSeconds())";
+                }
+                break;
+            case "datetime_seconds_dmy":
+                if ($type == "php") {
+                    $returnString = "d-m-Y H:i:s";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "addZ($fieldName.getUTCDate())+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+$fieldName.getUTCFullYear()+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())+':'+addZ($fieldName.getUTCSeconds())";
+                }
+                break;
+            case "datetime_seconds_ymd":
+                if ($type == "php") {
+                    $returnString = "Y-m-d H:i:s";
+                }
+                elseif ($type == "javascript") {
+                    $returnString = "$fieldName.getUTCFullYear()+'-'+addZ($fieldName.getUTCMonth()+1)+'-'+addZ($fieldName.getUTCDate())+' '+addZ($fieldName.getUTCHours())+':'+addZ($fieldName.getUTCMinutes())+':'+addZ($fieldName.getUTCSeconds())";
+                }
+                break;
+            default:
+                $returnString = '';
+        }
+        return $returnString;
     }
 }
