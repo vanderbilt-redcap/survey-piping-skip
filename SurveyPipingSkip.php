@@ -98,6 +98,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 'survey_hash': '" . $survey_hash . "',
                                 'response_id': '" . $response_id . "',
                                 'repeat_instance': '" . $repeat_instance . "',
+                                'token': '".$token."',
                                 'check_value': value
                             },
                             success: function (data) {
