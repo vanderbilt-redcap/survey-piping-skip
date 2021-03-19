@@ -77,8 +77,7 @@ class SurveyPipingSkip extends AbstractExternalModule
             }
         }
         else {
-            if ($pipeAll[$currentIndex] == "yes") {
-                echo "<script>
+            echo "<script>
                 var lastFieldData = [];
                 function surveyPipingData(triggerfield) {
                         var value = triggerfield.val();
@@ -98,11 +97,11 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 'survey_hash': '" . $survey_hash . "',
                                 'response_id': '" . $response_id . "',
                                 'repeat_instance': '" . $repeat_instance . "',
-                                'token': '".$token."',
+                                'token': '" . $token . "',
                                 'check_value': value
                             },
                             success: function (data) {
-                                //console.log(data);
+                                console.log(data);
                                 var dataArray = JSON.parse(data);
                                 //console.log(dataArray);
                                 var metadata = dataArray['field_types'];
@@ -113,7 +112,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                     for (fname in metadata) {
                                         if (fname == name) continue;
                                         if (fielddata === undefined || dataArray['data'] === null) {
-                                            continue;
+                                            //continue;
                                             fielddata = [];
                                             fielddata[fname] = '';
                                         }
@@ -171,7 +170,6 @@ class SurveyPipingSkip extends AbstractExternalModule
                             a.every((val, index) => val === b[index]);
                     }
                 </script>";
-            }
         }
         session_write_close();
         session_id($sess_id_1);
@@ -251,6 +249,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         $sourcePartIDs = $this->getProjectSetting('source_part_id');
         $destPartIDs = $this->getProjectSetting('dest_part_id');
         $pipeAll = $this->getProjectSetting('pipe_all_data');
+        $pipeFields = $this->getProjectSetting('pipe_fields');
         $sourceForms = $this->getProjectSetting('source_form');
         $destForms = $this->getProjectSetting('dest_form');
         $calcStrings = $this->getProjectSetting('pipe_data_check');
@@ -349,11 +348,12 @@ class SurveyPipingSkip extends AbstractExternalModule
                                                     $subFieldData = "";
                                                 }
                                             }
+
                                             if ($fieldName == $sourceCompleteField && $returnType == "submit") {
                                                 $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
                                                 //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
                                             }
-                                            elseif ($pipeAll[$currentIndex] == "yes" && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
+                                            elseif (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
                                                 $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
                                                 //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
                                             }
@@ -376,7 +376,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                         $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
                                         //$transferData[$record][$event_id][$fieldName] = $fieldData;
                                     }
-                                    elseif ($pipeAll[$currentIndex] == "yes" && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
+                                    elseif (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
                                         $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
                                         //$transferData[$record][$event_id][$fieldName] = $fieldData;
                                     }

@@ -105,6 +105,12 @@
               "key": "pipe_data_check",
               "name": "Data Flag in Source to Pipe Data",
               "type": "text"
+            },
+            {
+              "key": "pipe_fields",
+              "name": "Field(s) on Form to Be Piped Into, If 'Pipe All Data' Is Not Selected",
+              "type": "field-list",
+              "repeatable": true
             }
           ]
         }

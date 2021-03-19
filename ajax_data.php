@@ -25,6 +25,11 @@ if (!empty($_POST['token'])) {
         $currentProject = new \Project($project_id);
         $instrumentRepeats = $currentProject->isRepeatingFormOrEvent($event_id, $instrument);
 
+        $sourceProjects = $module->getProjectSetting('source_project',$project_id);
+        $pipeAllFields = $module->getProjectSetting("pipe_all_data",$project_id);
+        $pipeFields = $module->getProjectSetting("pipe_fields",$project_id);
+        $destForms = $module->getProjectSetting('dest_form',$project_id);
+
         list($transferData, $currentIndex, $formIndex) = $module->getMatchingRecordData($return_type, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance, $check_value);
 
         $surveyObject = new \Survey();
@@ -40,9 +45,24 @@ if (!empty($_POST['token'])) {
         $fieldsOnPage = array_diff($module->getFieldsOnForm($currentProject->metadata, $instrument), $hideFields);
 
         $fieldList = array();
+        $pipeFieldsOnForm = array();
+        $currentIndex = "";
+        $pipeAll = false;
+
+        foreach ($sourceProjects as $topIndex => $sourceID) {
+            if ($sourceID == $project_id && $pipeAllFields[$topIndex] == "yes") {
+                $pipeAll = true;
+            }
+            foreach ($destForms[$topIndex] as $bottomIndex => $destForm) {
+                if ($destForm == $instrument) {
+                    $pipeFieldsOnForm = array_merge($pipeFieldsOnForm,$pipeFields[$topIndex][$bottomIndex]);
+                }
+            }
+        }
 
         $metaData = $currentProject->metadata;
         foreach ($metaData as $fieldName => $fieldInfo) {
+            if ($pipeAll == false && !in_array($fieldName,$pipeFieldsOnForm)) continue;
             if ($fieldInfo['form_name'] == $instrument && in_array($fieldName, $fieldsOnPage) && $fieldInfo['element_type'] != 'descriptive') {
                 $fieldList[$fieldName] = $fieldInfo['element_type'];
             }
