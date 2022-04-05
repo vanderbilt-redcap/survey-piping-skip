@@ -55,25 +55,26 @@ if (!empty($_POST['token'])) {
             }
             foreach ($destForms[$topIndex] as $bottomIndex => $destForm) {
                 if ($destForm == $instrument) {
-                    $pipeFieldsOnForm = array_merge($pipeFieldsOnForm,$pipeFields[$topIndex][$bottomIndex]);
+                    $pipeFieldsOnForm = array_merge($pipeFieldsOnForm, $pipeFields[$topIndex][$bottomIndex]);
                 }
             }
-        }
 
-        $metaData = $currentProject->metadata;
-        foreach ($metaData as $fieldName => $fieldInfo) {
-            if ($pipeAll == false && !in_array($fieldName,$pipeFieldsOnForm)) continue;
-            if ($fieldInfo['form_name'] == $instrument && in_array($fieldName, $fieldsOnPage) && $fieldInfo['element_type'] != 'descriptive') {
-                $fieldList[$fieldName] = $fieldInfo['element_type'];
+
+            $metaData = $currentProject->metadata;
+            foreach ($metaData as $fieldName => $fieldInfo) {
+                if ($pipeAll == false && !in_array($fieldName, $pipeFieldsOnForm)) continue;
+                if ($fieldInfo['form_name'] == $instrument && in_array($fieldName, $fieldsOnPage) && $fieldInfo['element_type'] != 'descriptive') {
+                    $fieldList[$fieldName] = $fieldInfo['element_type'];
+                }
             }
-        }
 
-        if ($instrumentRepeats) {
-            $returnData = $transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance];
-        } else {
-            $returnData = $transferData[$record][$event_id];
+            if ($instrumentRepeats) {
+                $returnData = $transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance];
+            } else {
+                $returnData = $transferData[$record][$event_id];
+            }
+            echo json_encode(array('data' => $returnData, 'field_types' => $fieldList));
         }
-        echo json_encode(array('data' => $returnData, 'field_types' => $fieldList));
     }
 }
 session_write_close();

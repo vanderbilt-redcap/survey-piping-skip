@@ -117,6 +117,8 @@ class SurveyPipingSkip extends AbstractExternalModule
                                             fielddata[fname] = '';
                                         }
                                         var datapoint = '';
+                                        console.log('Field data');
+                                        console.log(fielddata);
                                         if (fname in fielddata) {
                                             datapoint = fielddata[fname];
                                             switch(metadata[fname]) {
