@@ -102,6 +102,21 @@
               ]
             },
             {
+              "key": "show_data_entry",
+              "name": "Perform Checks on Data Entry Form",
+              "type": "radio",
+              "choices": [
+                {
+                  "value": "no",
+                  "name": "No"
+                },
+                {
+                  "value": "yes",
+                  "name": "Yes"
+                }
+              ]
+            },
+            {
               "key": "pipe_data_check",
               "name": "Data Flag in Source to Pipe Data",
               "type": "text"

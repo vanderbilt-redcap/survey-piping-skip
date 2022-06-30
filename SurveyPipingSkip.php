@@ -9,10 +9,22 @@ class SurveyPipingSkip extends AbstractExternalModule
 {
     function redcap_data_entry_form($project_id, $record, $instrument, $event_id, $group_id = NULL, $repeat_instance = 1) {
         //list($transferData,$currentIndex,$formIndex) = $this->getMatchingRecordData("submit",$project_id,$record,$instrument,$event_id,$group_id,null,null,$repeat_instance);
+        $validForms = $this->getProjectSetting("dest_form",$project_id);
+        $showOnDE = $this->getProjectSetting("show_data_entry",$project_id);
+        if (is_array($validForms)) {
+            foreach ($validForms as $topIndex => $subSetting) {
+                foreach ($subSetting as $index => $vForm) {
+                    if (is_array($showOnDE) && $vForm == $instrument && $showOnDE[$topIndex][$index] == "yes") {
+                        $this->processFormFields("form", $project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
-        list($transferData,$currentIndex,$formIndex) = $this->getMatchingRecordData("submit",$project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance);
+        list($transferData,$currentIndex,$formIndex) = $this->getMatchingRecordData("submit",$project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$repeat_instance);
         if (!empty($transferData)) {
             /*echo "<pre>";
             print_r($transferData);
@@ -30,6 +42,23 @@ class SurveyPipingSkip extends AbstractExternalModule
 
     function redcap_survey_page_top($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance = 1)
     {
+        $validForms = $this->getProjectSetting("dest_form",$project_id);
+
+        if (is_array($validForms)) {
+            foreach ($validForms as $topIndex => $subSetting) {
+                foreach ($subSetting as $index => $vForm) {
+                    if ($vForm == $instrument) {
+                        $this->processFormFields("survey", $project_id, $record, $instrument, $event_id, $group_id, $repeat_instance, $survey_hash);
+                        break;
+                    }
+                }
+            }
+        }
+        //$this->processFormFields("survey",$project_id,$record,$instrument,$event_id,$group_id,$repeat_instance,$survey_hash);
+    }
+
+    function processFormFields($view_type,$project_id,$record,$instrument,$event_id,$group_id,$repeat_instance,$survey_hash = "")
+    {
         $sess_id_1 = session_id();
         $sess_id_2 = "survey-module";
         session_write_close();
@@ -41,31 +70,10 @@ class SurveyPipingSkip extends AbstractExternalModule
         }
         $token = $_SESSION['survey_piping_token'];
 
-        $question_by_section = $this->findQuestionBySection($project_id,$instrument);
-
         $destPartIDs = $this->getProjectSetting('dest_part_id');
-        $sourceForms = $this->getProjectSetting('source_form');
         $autoSubmit = $this->getProjectSetting('auto_submit');
-        $pipeAll = $this->getProjectSetting('pipe_all_data');
-        $currentProject = new \Project($project_id);
 
-        $surveyObject = new \Survey();
-
-        list ($pageFields, $totalPages) = $surveyObject::getPageFields($instrument, $question_by_section);
-        list ($saveBtnText, $hideFields, $isLastPage) = $surveyObject::setPageNum($pageFields, $totalPages);
-        if (!in_array($currentProject->table_pk,$hideFields)) {
-            $hideFields[] = $currentProject->table_pk;
-        }
-        if (!in_array($instrument."_complete",$hideFields)) {
-            $hideFields[] = $instrument."_complete";
-        }
-
-        $fieldsOnPage = array_diff($this->getFieldsOnForm($currentProject->metadata,$instrument),$hideFields);
-
-        $instrumentRepeats = $currentProject->isRepeatingFormOrEvent($event_id, $instrument);
-
-        list($sourceData, $currentIndex, $formIndex) = $this->getMatchingRecordData("submit", $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance);
-        $sourceForm = $sourceForms[$currentIndex][$formIndex];
+        list($sourceData, $currentIndex, $formIndex) = $this->getMatchingRecordData("submit", $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance);
 
         if ($autoSubmit[$currentIndex][$formIndex] == "yes" && !empty($sourceData)) {
             if (trim($_GET['__reqmsg']) == '') {
@@ -75,15 +83,14 @@ class SurveyPipingSkip extends AbstractExternalModule
                     });
                 </script>";
             }
-        }
-        else {
+        } else {
             echo "<script>
                 var lastFieldData = [];
                 function surveyPipingData(triggerfield) {
                         var value = triggerfield.val();
                         var name = triggerfield.prop('name');
-                        //console.log(name);
-                        //console.log(value);
+                        console.log(name);
+                        console.log(value);
                         $.ajax({
                             url: '" . $this->getUrl('ajax_data.php') . "&NOAUTH',
                             method: 'post',
@@ -95,7 +102,6 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 'event_id': '" . $event_id . "',
                                 'group_id': '" . $group_id . "',
                                 'survey_hash': '" . $survey_hash . "',
-                                'response_id': '" . $response_id . "',
                                 'repeat_instance': '" . $repeat_instance . "',
                                 'token': '" . $token . "',
                                 'check_value': value
@@ -246,15 +252,16 @@ class SurveyPipingSkip extends AbstractExternalModule
         return $fieldList;
     }
 
-    function getMatchingRecordData($returnType, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance, $chosenValue = "") {
-        $sourceProjects = $this->getProjectSetting('source_project');
-        $sourcePartIDs = $this->getProjectSetting('source_part_id');
-        $destPartIDs = $this->getProjectSetting('dest_part_id');
-        $pipeAll = $this->getProjectSetting('pipe_all_data');
-        $pipeFields = $this->getProjectSetting('pipe_fields');
-        $sourceForms = $this->getProjectSetting('source_form');
-        $destForms = $this->getProjectSetting('dest_form');
-        $calcStrings = $this->getProjectSetting('pipe_data_check');
+    function getMatchingRecordData($returnType, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance, $chosenValue = "") {
+        $sourceProjects = $this->getProjectSetting('source_project',$project_id);
+        $sourcePartIDs = $this->getProjectSetting('source_part_id',$project_id);
+        $destPartIDs = $this->getProjectSetting('dest_part_id',$project_id);
+        $pipeAll = $this->getProjectSetting('pipe_all_data',$project_id);
+        $pipeFields = $this->getProjectSetting('pipe_fields',$project_id);
+        $dataChecks = $this->getProjectSetting('show_data_entry',$project_id);
+        $sourceForms = $this->getProjectSetting('source_form',$project_id);
+        $destForms = $this->getProjectSetting('dest_form',$project_id);
+        $calcStrings = $this->getProjectSetting('pipe_data_check',$project_id);
 
         $destIDField = "";
         $destIDValue = "";
@@ -319,7 +326,7 @@ class SurveyPipingSkip extends AbstractExternalModule
             $destIDValue = $chosenValue;
         }
 
-        if (!empty($sourceProjects) && $survey_hash != "") {
+        if (!empty($sourceProjects) && ($survey_hash != "" || $dataChecks[$currentIndex][$formIndex] == "yes")) {
             $currentProject = new \Project($project_id);
             $instrumentRepeats = $currentProject->isRepeatingFormOrEvent($event_id,$instrument);
             $currentFormFields = $this->getFieldsOnForm($currentProject->metadata,$instrument);

@@ -15,12 +15,12 @@ $instrument = $_POST['instrument'];
 $event_id = $_POST['event_id'];
 $group_id = $_POST['group_id'];
 $survey_hash = $_POST['survey_hash'];
-$response_id = $_POST['response_id'];
 $repeat_instance = $_POST['repeat_instance'];
 
 if (!empty($_POST['token'])) {
     if (hash_equals($_SESSION['survey_piping_token'],$_POST['token'])) {
         $check_value = $_POST['check_value'];
+        $module = new \Vanderbilt\SurveyPipingSkip\SurveyPipingSkip($project_id);
         $question_by_section = $module->findQuestionBySection($project_id, $instrument);
         $currentProject = new \Project($project_id);
         $instrumentRepeats = $currentProject->isRepeatingFormOrEvent($event_id, $instrument);
@@ -30,19 +30,9 @@ if (!empty($_POST['token'])) {
         $pipeFields = $module->getProjectSetting("pipe_fields",$project_id);
         $destForms = $module->getProjectSetting('dest_form',$project_id);
 
-        list($transferData, $currentIndex, $formIndex) = $module->getMatchingRecordData($return_type, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance, $check_value);
+        list($transferData, $currentIndex, $formIndex) = $module->getMatchingRecordData($return_type, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance, $check_value);
 
-        $surveyObject = new \Survey();
-        list ($pageFields, $totalPages) = $surveyObject::getPageFields($instrument, $question_by_section);
-        list ($saveBtnText, $hideFields, $isLastPage) = $surveyObject::setPageNum($pageFields, $totalPages);
-        if (!in_array($currentProject->table_pk, $hideFields)) {
-            $hideFields[] = $currentProject->table_pk;
-        }
-        if (!in_array($instrument . "_complete", $hideFields)) {
-            $hideFields[] = $instrument . "_complete";
-        }
-
-        $fieldsOnPage = array_diff($module->getFieldsOnForm($currentProject->metadata, $instrument), $hideFields);
+        $fieldsOnPage = $module->getFieldsOnForm($currentProject->metadata, $instrument);
 
         $fieldList = array();
         $pipeFieldsOnForm = array();
@@ -59,7 +49,7 @@ if (!empty($_POST['token'])) {
                 }
             }
 
-
+//TODO Why is the 'participant_id' field required to be specified in the list of fields to pipe instead of just using the pipe all data flag?????
             $metaData = $currentProject->metadata;
             foreach ($metaData as $fieldName => $fieldInfo) {
                 if ($pipeAll == false && !in_array($fieldName, $pipeFieldsOnForm)) continue;
