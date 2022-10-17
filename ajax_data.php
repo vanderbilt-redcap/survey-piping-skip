@@ -52,7 +52,7 @@ if (!empty($_POST['token'])) {
 //TODO Why is the 'participant_id' field required to be specified in the list of fields to pipe instead of just using the pipe all data flag?????
             $metaData = $currentProject->metadata;
             foreach ($metaData as $fieldName => $fieldInfo) {
-                if ($pipeAll == false && !in_array($fieldName, $pipeFieldsOnForm)) continue;
+                if ($pipeAll === false && !in_array($fieldName, $pipeFieldsOnForm)) continue;
                 if ($fieldInfo['form_name'] == $instrument && in_array($fieldName, $fieldsOnPage) && $fieldInfo['element_type'] != 'descriptive') {
                     $fieldList[$fieldName] = $fieldInfo['element_type'];
                 }
