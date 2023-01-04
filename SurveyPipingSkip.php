@@ -85,7 +85,7 @@ class SurveyPipingSkip extends AbstractExternalModule
             }
         } else {
             echo "<script>
-                var lastFieldData = [];
+                var lastFieldData = {};
                 function surveyPipingData(triggerfield) {
                         var value = triggerfield.val();
                         var name = triggerfield.prop('name');
@@ -113,20 +113,18 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 var metadata = dataArray['field_types'];
                                 //console.log(metadata);
                                 var fielddata = dataArray['data'];
-                                //console.log(fielddata);
+                                console.log('Field Data');
+                                console.log(fielddata);
+                                console.log(lastFieldData);
                                 
-                                if (!arraysEqual(fielddata,lastFieldData)) {
+                                if (fielddata !== null && !objectsEqual(fielddata,lastFieldData)) {
                                     for (fname in metadata) {
                                         console.log('Field name: '+fname);
                                         if (fname == name) continue;
-                                        if (fielddata === undefined || dataArray['data'] === null) {
-                                            //continue;
-                                            fielddata = [];
-                                            fielddata[fname] = '';
-                                        }
+                                        
                                         var datapoint = '';
-                                        console.log('Field data');
-                                        console.log(fielddata);
+                                        //console.log('Field data');
+                                        //console.log(fielddata);
                                         if (fname in fielddata) {
                                             datapoint = fielddata[fname];
                                             switch(metadata[fname]) {
@@ -174,10 +172,41 @@ class SurveyPipingSkip extends AbstractExternalModule
                         });
                     });
                     function arraysEqual(a, b) {
+                        console.log('Comparing arrays');
+                        console.log(a);
+                        console.log(b);
                       return Array.isArray(a) &&
                             Array.isArray(b) &&
                             a.length === b.length &&
                             a.every((val, index) => val === b[index]);
+                    }
+                    function objectsEqual(a, b) {
+                        if (a === null && b === null) return true;
+                        if (a === null || b === null) return false;
+                        
+                        // Create arrays of property names
+                        var aProps = Object.getOwnPropertyNames(a);
+                        var bProps = Object.getOwnPropertyNames(b);
+                    
+                        // If number of properties is different,
+                        // objects are not equivalent
+                        if (aProps.length != bProps.length) {
+                            return false;
+                        }
+                    
+                        for (var i = 0; i < aProps.length; i++) {
+                            var propName = aProps[i];
+                    
+                            // If values of same property are not equal,
+                            // objects are not equivalent
+                            if (a[propName] !== b[propName]) {
+                                return false;
+                            }
+                        }
+                    
+                        // If we made it this far, objects
+                        // are considered equivalent
+                        return true;
                     }
                 </script>";
         }
