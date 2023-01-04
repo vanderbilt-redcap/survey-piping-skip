@@ -36,23 +36,28 @@ if (!empty($_POST['token'])) {
 
         $fieldList = array();
         $pipeFieldsOnForm = array();
+        $debugInfo = array();
         $currentIndex = "";
         $pipeAll = false;
-
         foreach ($sourceProjects as $topIndex => $sourceID) {
-            if ($sourceID == $project_id && $pipeAllFields[$topIndex] == "yes") {
+            $debugInfo['pipefieldsonform'] = "projects $sourceID and $project_id";
+            if ($pipeAllFields[$topIndex] == "yes") {
                 $pipeAll = true;
             }
             foreach ($destForms[$topIndex] as $bottomIndex => $destForm) {
+                $debugInfo['form_check'][] = "checking $destForm and $instrument with $topIndex and $bottomIndex";
                 if ($destForm == $instrument) {
+                    $debugInfo['pipefields'] = $pipeFields;
                     $pipeFieldsOnForm = array_merge($pipeFieldsOnForm, $pipeFields[$topIndex][$bottomIndex]);
                 }
             }
 
-//TODO Why is the 'participant_id' field required to be specified in the list of fields to pipe instead of just using the pipe all data flag?????
             $metaData = $currentProject->metadata;
+            $debugInfo['fields'] = $pipeFieldsOnForm;
             foreach ($metaData as $fieldName => $fieldInfo) {
+                //$debugInfo['process'] = "before pipeall check";
                 if ($pipeAll === false && !in_array($fieldName, $pipeFieldsOnForm)) continue;
+                //$debugInfo['process'] = "after pipeall check";
                 if ($fieldInfo['form_name'] == $instrument && in_array($fieldName, $fieldsOnPage) && $fieldInfo['element_type'] != 'descriptive') {
                     $fieldList[$fieldName] = $fieldInfo['element_type'];
                 }
@@ -63,7 +68,7 @@ if (!empty($_POST['token'])) {
             } else {
                 $returnData = $transferData[$record][$event_id];
             }
-            echo json_encode(array('data' => $returnData, 'field_types' => $fieldList));
+            echo json_encode(array('data' => $returnData, 'field_types' => $fieldList, 'debug'=>$debugInfo));
         }
     }
 }

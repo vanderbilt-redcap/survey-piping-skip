@@ -114,8 +114,10 @@ class SurveyPipingSkip extends AbstractExternalModule
                                 //console.log(metadata);
                                 var fielddata = dataArray['data'];
                                 //console.log(fielddata);
+                                
                                 if (!arraysEqual(fielddata,lastFieldData)) {
                                     for (fname in metadata) {
+                                        console.log('Field name: '+fname);
                                         if (fname == name) continue;
                                         if (fielddata === undefined || dataArray['data'] === null) {
                                             //continue;
