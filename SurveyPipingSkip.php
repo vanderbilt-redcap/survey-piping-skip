@@ -181,6 +181,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                             a.every((val, index) => val === b[index]);
                     }
                     function objectsEqual(a, b) {
+                        // If both are null, they are equal. If only one is null, they are not equal
                         if (a === null && b === null) return true;
                         if (a === null || b === null) return false;
                         
