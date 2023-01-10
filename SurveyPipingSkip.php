@@ -24,7 +24,37 @@ class SurveyPipingSkip extends AbstractExternalModule
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
+        $transferData = array();
+        $validForms = $this->getProjectSetting("dest_form",$project_id);
+        $showOnDE = $this->getProjectSetting("show_data_entry",$project_id);
+        $autoSubmits = $this->getProjectSetting('auto_submit',$project_id);
 
+        if (is_array($validForms)) {
+            foreach ($validForms as $topIndex => $subSetting) {
+                foreach ($subSetting as $index => $vForm) {
+                    $autoSubmit = $autoSubmits[$topIndex][$index];
+                    if ($autoSubmit == "yes" && $vForm == $instrument && ($survey_hash != NULL || (is_array($showOnDE) && $showOnDE[$topIndex][$index] == "yes"))) {
+                        $transferData = array_merge($transferData,$this->getMatchingRecordData("submit", $topIndex, $index, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance));
+                    }
+                }
+            }
+
+            //$transferData = $this->getMatchingRecordData("submit", $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance);
+            if (!empty($transferData)) {
+                /*echo "<pre>";
+                print_r($transferData);
+                echo "</pre>";*/
+                $saveResult = \REDCap::saveData($project_id, 'array', $transferData);
+                /*echo "<pre>";
+                print_r($saveResult);
+                echo "</pre>";*/
+                //exit;
+                /*echo "$(document).ready(function() {
+                    formSubmitDataEntry();
+                });";*/
+            }
+        }
+        $this->exitAfterHook();
     }
 
     function redcap_survey_page_top($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance = 1)
@@ -48,8 +78,8 @@ class SurveyPipingSkip extends AbstractExternalModule
     {
         static $firstRun;
 
-        $destPartIDs = $this->getProjectSetting('dest_part_id');
-        $autoSubmit = $this->getProjectSetting('auto_submit');
+        $destPartIDs = $this->getProjectSetting('dest_part_id',$project_id);
+        $autoSubmit = $this->getProjectSetting('auto_submit',$project_id);
 
         $sourceData = $this->getMatchingRecordData("submit", $currentIndex, $formIndex, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance);
 
