@@ -15,7 +15,7 @@ class SurveyPipingSkip extends AbstractExternalModule
             foreach ($validForms as $topIndex => $subSetting) {
                 foreach ($subSetting as $index => $vForm) {
                     if (is_array($showOnDE) && $vForm == $instrument && $showOnDE[$topIndex][$index] == "yes") {
-                        $this->processFormFields("form", $project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+                        $this->processFormFields("form", $topIndex, $index, $project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
                         break;
                     }
                 }
@@ -24,20 +24,7 @@ class SurveyPipingSkip extends AbstractExternalModule
     }
 
     function redcap_save_record($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
-        list($transferData,$currentIndex,$formIndex) = $this->getMatchingRecordData("submit",$project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$repeat_instance);
-        if (!empty($transferData)) {
-            /*echo "<pre>";
-            print_r($transferData);
-            echo "</pre>";*/
-            $saveResult = \REDCap::saveData($project_id, 'array', $transferData);
-            /*echo "<pre>";
-            print_r($saveResult);
-            echo "</pre>";*/
-            //exit;
-            /*echo "$(document).ready(function() {
-                formSubmitDataEntry();
-            });";*/
-        }
+
     }
 
     function redcap_survey_page_top($project_id,$record,$instrument,$event_id,$group_id,$survey_hash,$response_id,$repeat_instance = 1)
@@ -48,7 +35,7 @@ class SurveyPipingSkip extends AbstractExternalModule
             foreach ($validForms as $topIndex => $subSetting) {
                 foreach ($subSetting as $index => $vForm) {
                     if ($vForm == $instrument) {
-                        $this->processFormFields("survey", $project_id, $record, $instrument, $event_id, $group_id, $repeat_instance, $survey_hash);
+                        $this->processFormFields("survey", $topIndex, $index, $project_id, $record, $instrument, $event_id, $group_id, $repeat_instance, $survey_hash);
                         break;
                     }
                 }
@@ -57,23 +44,14 @@ class SurveyPipingSkip extends AbstractExternalModule
         //$this->processFormFields("survey",$project_id,$record,$instrument,$event_id,$group_id,$repeat_instance,$survey_hash);
     }
 
-    function processFormFields($view_type,$project_id,$record,$instrument,$event_id,$group_id,$repeat_instance,$survey_hash = "")
+    function processFormFields($view_type,$currentIndex,$formIndex,$project_id,$record,$instrument,$event_id,$group_id,$repeat_instance,$survey_hash = "")
     {
-        $sess_id_1 = session_id();
-        $sess_id_2 = "survey-module";
-        session_write_close();
-        session_id($sess_id_2);
-        session_start();
-
-        if (empty($_SESSION['survey_piping_token'])) {
-            $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
-        }
-        $token = $_SESSION['survey_piping_token'];
+        static $firstRun;
 
         $destPartIDs = $this->getProjectSetting('dest_part_id');
         $autoSubmit = $this->getProjectSetting('auto_submit');
 
-        list($sourceData, $currentIndex, $formIndex) = $this->getMatchingRecordData("submit", $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance);
+        $sourceData = $this->getMatchingRecordData("submit", $currentIndex, $formIndex, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance);
 
         if ($autoSubmit[$currentIndex][$formIndex] == "yes" && !empty($sourceData)) {
             if (trim($_GET['__reqmsg']) == '') {
@@ -84,136 +62,145 @@ class SurveyPipingSkip extends AbstractExternalModule
                 </script>";
             }
         } else {
-            echo "<script>
-                var lastFieldData = {};
-                function surveyPipingData(triggerfield) {
-                        var value = triggerfield.val();
-                        var name = triggerfield.prop('name');
-                        console.log(name);
-                        console.log(value);
-                        $.ajax({
-                            url: '" . $this->getUrl('ajax_data.php') . "&NOAUTH',
-                            method: 'post',
-                            data: {
-                                'return_type': 'data', 
-                                'project_id': '" . $project_id . "', 
-                                'record': '" . $record . "',
-                                'instrument': '" . $instrument . "', 
-                                'event_id': '" . $event_id . "',
-                                'group_id': '" . $group_id . "',
-                                'survey_hash': '" . $survey_hash . "',
-                                'repeat_instance': '" . $repeat_instance . "',
-                                'token': '" . $token . "',
-                                'check_value': value
-                            },
-                            success: function (data) {
-                                console.log(data);
-                                var dataArray = JSON.parse(data);
-                                //console.log(dataArray);
-                                var metadata = dataArray['field_types'];
-                                //console.log(metadata);
-                                var fielddata = dataArray['data'];
-                                console.log('Field Data');
-                                console.log(fielddata);
-                                console.log(lastFieldData);
-                                
-                                if (fielddata !== null && !objectsEqual(fielddata,lastFieldData)) {
-                                    for (fname in metadata) {
-                                        console.log('Field name: '+fname);
-                                        if (fname == name) continue;
-                                        
-                                        var datapoint = '';
-                                        //console.log('Field data');
-                                        //console.log(fielddata);
-                                        if (fname in fielddata) {
-                                            datapoint = fielddata[fname];
-                                            switch(metadata[fname]) {
-                                                case 'text':
-                                                    $('input[name=\"'+fname+'\"]').val(datapoint).change();
-                                                    break;
-                                                case 'textarea':
-                                                    $('textarea[name=\"'+fname+'\"]').val(datapoint).change();
-                                                    break;
-                                                case 'radio':
-                                                case 'yesno':
-                                                case 'truefalse':
-                                                    $('input[name=\"'+fname+'___radio\"][value=\"'+datapoint+'\"]').click();
-                                                    break;
-                                                case 'checkbox':
-                                                    for (data in datapoint) {
-                                                        $('#id-__chk__'+fname+'_RC_'+datapoint[data]).click();
-                                                    }
-                                                    break;
-                                                case 'select':
-                                                    $('select[name=\"'+fname+'\"]').val(datapoint).change();
-                                                    break;
-                                                default:
-                                                    break;
+            echo "<script>";
+            if (!isset($firstRun)) {
+                $sess_id_1 = session_id();
+                $sess_id_2 = "survey-module";
+                session_write_close();
+                session_id($sess_id_2);
+                session_start();
+
+                if (empty($_SESSION['survey_piping_token'])) {
+                    $_SESSION['survey_piping_token'] = bin2hex(random_bytes(32));
+                }
+                $token = $_SESSION['survey_piping_token'];
+                echo "var lastFieldData = {};
+                    function surveyPipingData(triggerfield) {
+                            var value = triggerfield.val();
+                            var name = triggerfield.prop('name');
+                            console.log(name);
+                            console.log(value);
+                            $.ajax({
+                                url: '" . $this->getUrl('ajax_data.php') . "&NOAUTH',
+                                method: 'post',
+                                data: {
+                                    'return_type': 'data', 
+                                    'project_id': '" . $project_id . "', 
+                                    'record': '" . $record . "',
+                                    'instrument': '" . $instrument . "', 
+                                    'event_id': '" . $event_id . "',
+                                    'group_id': '" . $group_id . "',
+                                    'survey_hash': '" . $survey_hash . "',
+                                    'repeat_instance': '" . $repeat_instance . "',
+                                    'token': '" . $token . "',
+                                    'check_name': name,
+                                    'check_value': value
+                                },
+                                success: function (data) {
+                                    console.log(data);
+                                    var dataArray = JSON.parse(data);
+                                    //console.log(dataArray);
+                                    var metadata = dataArray['field_types'];
+                                    //console.log(metadata);
+                                    var fielddata = dataArray['data'];
+                                    //console.log(fielddata);
+                                    
+                                    if (fielddata !== null && !objectsEqual(fielddata,lastFieldData)) {
+                                        for (fname in metadata) {
+                                            if (fname == name) continue;
+                                            
+                                            var datapoint = '';
+                                            //console.log('Field data');
+                                            //console.log(fielddata);
+                                            if (fname in fielddata) {
+                                                datapoint = fielddata[fname];
+                                                switch(metadata[fname]) {
+                                                    case 'text':
+                                                        $('input[name=\"'+fname+'\"]').val(datapoint).change();
+                                                        break;
+                                                    case 'textarea':
+                                                        $('textarea[name=\"'+fname+'\"]').val(datapoint).change();
+                                                        break;
+                                                    case 'radio':
+                                                    case 'yesno':
+                                                    case 'truefalse':
+                                                        $('input[name=\"'+fname+'___radio\"][value=\"'+datapoint+'\"]').click();
+                                                        break;
+                                                    case 'checkbox':
+                                                        for (data in datapoint) {
+                                                            $('#id-__chk__'+fname+'_RC_'+datapoint[data]).click();
+                                                        }
+                                                        break;
+                                                    case 'select':
+                                                        $('select[name=\"'+fname+'\"]').val(datapoint).change();
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
                                             }
                                         }
                                     }
+                                    else {
+                                        //console.log('Stopped for duplicate');
+                                    }
+                                    lastFieldData = fielddata;
+                                    //$('#'+destination).css('display','inline-block').html(data);
+                                    //$('#accordion > div').accordion({ header: 'h3', collapsible: true, active: false });
+                                },
+                                error: function (errorThrown) {
+                                    console.log(errorThrown);
                                 }
-                                else {
-                                    //console.log('Stopped for duplicate');
-                                }
-                                lastFieldData = fielddata;
-                                //$('#'+destination).css('display','inline-block').html(data);
-                                //$('#accordion > div').accordion({ header: 'h3', collapsible: true, active: false });
-                            },
-                            error: function (errorThrown) {
-                                console.log(errorThrown);
+                            });
+                        }
+                        
+                        function arraysEqual(a, b) {
+                          return Array.isArray(a) &&
+                                Array.isArray(b) &&
+                                a.length === b.length &&
+                                a.every((val, index) => val === b[index]);
+                        }
+                        function objectsEqual(a, b) {
+                            // If both are null, they are equal. If only one is null, they are not equal
+                            if (a === null && b === null) return true;
+                            if (a === null || b === null) return false;
+                            
+                            // Create arrays of property names
+                            var aProps = Object.getOwnPropertyNames(a);
+                            var bProps = Object.getOwnPropertyNames(b);
+                        
+                            // If number of properties is different,
+                            // objects are not equivalent
+                            if (aProps.length != bProps.length) {
+                                return false;
                             }
-                        });
-                    }
-                    $(document).ready(function() {    
+                        
+                            for (var i = 0; i < aProps.length; i++) {
+                                var propName = aProps[i];
+                        
+                                // If values of same property are not equal,
+                                // objects are not equivalent
+                                if (a[propName] !== b[propName]) {
+                                    return false;
+                                }
+                            }
+                        
+                            // If we made it this far, objects
+                            // are considered equivalent
+                            return true;
+                        }";
+                session_write_close();
+                session_id($sess_id_1);
+                session_start();
+            }
+            $firstRun = false;
+            echo "$(document).ready(function() {    
                         $('[name=\"" . $destPartIDs[$currentIndex] . "\"]').change(function() {
-                            //console.log($(this).val());
+                            console.log($(this).val());
                             surveyPipingData($(this));
                         });
                     });
-                    function arraysEqual(a, b) {
-                        console.log('Comparing arrays');
-                        console.log(a);
-                        console.log(b);
-                      return Array.isArray(a) &&
-                            Array.isArray(b) &&
-                            a.length === b.length &&
-                            a.every((val, index) => val === b[index]);
-                    }
-                    function objectsEqual(a, b) {
-                        // If both are null, they are equal. If only one is null, they are not equal
-                        if (a === null && b === null) return true;
-                        if (a === null || b === null) return false;
-                        
-                        // Create arrays of property names
-                        var aProps = Object.getOwnPropertyNames(a);
-                        var bProps = Object.getOwnPropertyNames(b);
-                    
-                        // If number of properties is different,
-                        // objects are not equivalent
-                        if (aProps.length != bProps.length) {
-                            return false;
-                        }
-                    
-                        for (var i = 0; i < aProps.length; i++) {
-                            var propName = aProps[i];
-                    
-                            // If values of same property are not equal,
-                            // objects are not equivalent
-                            if (a[propName] !== b[propName]) {
-                                return false;
-                            }
-                        }
-                    
-                        // If we made it this far, objects
-                        // are considered equivalent
-                        return true;
-                    }
                 </script>";
         }
-        session_write_close();
-        session_id($sess_id_1);
-        session_start();
     }
 
     function getCalculatedData($calcString,$recordData,$event_id,$project_id,$repeat_instrument,$repeat_instance=null) {
@@ -284,7 +271,7 @@ class SurveyPipingSkip extends AbstractExternalModule
         return $fieldList;
     }
 
-    function getMatchingRecordData($returnType, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance, $chosenValue = "") {
+    function getMatchingRecordData($returnType, $currentIndex, $formIndex, $project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $repeat_instance, $chosenValue = "") {
         $sourceProjects = $this->getProjectSetting('source_project',$project_id);
         $sourcePartIDs = $this->getProjectSetting('source_part_id',$project_id);
         $destPartIDs = $this->getProjectSetting('dest_part_id',$project_id);
@@ -302,9 +289,6 @@ class SurveyPipingSkip extends AbstractExternalModule
         $sourceCompleteField = "";
         $sourceCompleteValue = "";
 
-        $currentIndex = "";
-        $formIndex = "";
-
         $assert = function($calcString,$sourceData,$eventID,$projectID,$form,$instance) {
             if ($calcString == "" || $this->getCalculatedData($calcString,$sourceData,$eventID,$projectID,$form,$instance) == "1")
                 return true;
@@ -313,18 +297,8 @@ class SurveyPipingSkip extends AbstractExternalModule
 
         $transferData = array();
 
-        foreach ($destForms as $index => $formList) {
-            if (!is_numeric($currentIndex)) {
-                foreach ($formList as $subIndex => $formName) {
-                    if ($formName == $instrument) {
-                        $destIDField = $destPartIDs[$index];
-                        $destCompleteField = $formName . "_complete";
-                        $currentIndex = $index;
-                        $formIndex = $subIndex;
-                    }
-                }
-            }
-        }
+        $destIDField = $destPartIDs[$currentIndex];
+        $destCompleteField = $destForms[$currentIndex][$formIndex]."_complete";
 
         $currentData = \REDCap::getData($project_id,'array',array($record),array($destIDField,$destCompleteField));
 
@@ -390,11 +364,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                                 }
                                             }
 
-                                            if ($fieldName == $sourceCompleteField && $returnType == "submit") {
-                                                $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
-                                                //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
-                                            }
-                                            elseif (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
+                                            if (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
                                                 $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
                                                 //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
                                             }
@@ -413,11 +383,7 @@ class SurveyPipingSkip extends AbstractExternalModule
                                             $fieldData = "";
                                         }
                                     }
-                                    if ($fieldName == $sourceCompleteField && $returnType == "submit") {
-                                        $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
-                                        //$transferData[$record][$event_id][$fieldName] = $fieldData;
-                                    }
-                                    elseif (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
+                                    if (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
                                         $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
                                         //$transferData[$record][$event_id][$fieldName] = $fieldData;
                                     }
@@ -433,7 +399,7 @@ class SurveyPipingSkip extends AbstractExternalModule
             }
         }
 
-        return array($transferData,$currentIndex,$formIndex);
+        return $transferData;
     }
 
     function setTransferData(&$transferData, $isRepeating, $record, $event_id, $instrument, $fieldName, $fieldData, $repeat_instance = 1) {
