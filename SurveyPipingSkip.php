@@ -394,7 +394,11 @@ class SurveyPipingSkip extends AbstractExternalModule
                                                 }
                                             }
 
-                                            if (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
+                                            if ($fieldName == $sourceCompleteField && $returnType == "submit") {
+                                                $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$destCompleteField,$subFieldData,$repeat_instance);
+                                                //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
+                                            }
+                                            elseif (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
                                                 $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$subFieldData,$repeat_instance);
                                                 //$transferData[$record]['repeat_instances'][$event_id][$instrument][$repeat_instance][$fieldName] = $subFieldData;
                                             }
@@ -413,7 +417,11 @@ class SurveyPipingSkip extends AbstractExternalModule
                                             $fieldData = "";
                                         }
                                     }
-                                    if (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
+                                    if ($fieldName == $sourceCompleteField && $returnType == "submit") {
+                                        $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$destCompleteField,$fieldData,$repeat_instance);
+                                        //$transferData[$record][$event_id][$fieldName] = $fieldData;
+                                    }
+                                    elseif (($pipeAll[$currentIndex] == "yes" || ($pipeAll[$currentIndex] == "no" && in_array($fieldName,$pipeFields[$currentIndex][$formIndex]))) && in_array($fieldName,$currentFormFields) && $currentProject->metadata[$fieldName]['element_type'] == $sourceProject->metadata[$fieldName]['element_type'] && $currentProject->metadata[$fieldName]['element_enum'] == $sourceProject->metadata[$fieldName]['element_enum']) {
                                         $this->setTransferData($transferData,$instrumentRepeats,$record,$event_id,$instrument,$fieldName,$fieldData,$repeat_instance);
                                         //$transferData[$record][$event_id][$fieldName] = $fieldData;
                                     }
