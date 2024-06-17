@@ -19,7 +19,7 @@ $repeat_instance = $_POST['repeat_instance'];
 $check_name = $_POST['check_name'];
 $check_value = $_POST['check_value'];
 
-if (!empty($_POST['token']) && hash_equals($_SESSION['survey_piping_token'],$_POST['token'])) {
+if (!empty($_POST['token']) && hash_equals($_SESSION['survey_piping_token'] ?? '',$_POST['token'] ?? '')) {
     $module = new \Vanderbilt\SurveyPipingSkip\SurveyPipingSkip($project_id);
     $validForms = $module->getProjectSetting("dest_form", $project_id);
     $destPartIDs = $module->getProjectSetting('dest_part_id', $project_id);
